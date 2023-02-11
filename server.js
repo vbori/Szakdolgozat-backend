@@ -1,11 +1,7 @@
-const express = require('express');
+const http = require('http');
 
-const app = express();
+const server = http.createServer((req, res) => {
+    res.end('Hello World');
+})
 
-app.get('/', (req, res) => {
-    res.send('Hello World');
-});
-
-app.listen(8080, () => {
-    console.log("Backend Application listening at http://localhost:8080");
-});
+server.listen(3000);
