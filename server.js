@@ -1,9 +1,14 @@
+require('dotenv').config()
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const config = require('./config/database');
 const researchController = require('./routes/research.js');
+const passport = require('passport');
+const jwt = require('jsonwebtoken')
+const session = require('express-session')
 
 mongoose.connect(config.database, (err) => {
     if (!err)
@@ -13,10 +18,9 @@ mongoose.connect(config.database, (err) => {
 });
 
 const app = express();
-app.use(express.json());
 
 app.use(bodyParser.json());
-
+app.use(session({ secret: 'SECRET' }));
 app.use(passport.initialize());
 app.use(passport.session());
 

@@ -27,4 +27,22 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.post('/login', async (req, res) => {
+    const researcher = await Researcher.findResearcherByUsername(req.body.username);
+
+    if (!researcher) {
+      return res.status(400).send('Cannot find user')
+    }
+
+    try {
+        if(await bcrypt.compare(req.body.password, researcher.password)) {
+            res.send('Success')
+        } else {
+            res.send('Not Allowed')
+        }
+    } catch {
+        res.status(500).send()
+    }
+  })
+
 module.exports = router;

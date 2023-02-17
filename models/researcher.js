@@ -19,9 +19,9 @@ const Researcher = mongoose.model('Researcher', ResearcherSchema);
 
 module.exports =  Researcher;
 
-module.exports.findResearcherByUsername = function(username, callback) {
+module.exports.findResearcherByUsername = function(username) {
     const query = {username: username};
-    Researcher.findOne(query, callback);
+    return Researcher.findOne(query).exec();
 }
 
 module.exports.addResearcher = function(newResearcher, callback) {
