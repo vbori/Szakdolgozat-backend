@@ -4,13 +4,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const config = require('./config/database');
 const researchController = require('./routes/research.js');
 const passport = require('passport');
-const jwt = require('jsonwebtoken')
-const session = require('express-session')
+const session = require('express-session');
 
-mongoose.connect(config.database, (err) => {
+mongoose.connect(process.env.DATABASE, (err) => {
     if (!err)
         console.log('MongoDB connection succeeded.');
     else
@@ -24,9 +22,9 @@ app.use(session({ secret: 'SECRET' }));
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use(cors({ origin: 'http://localhost:4200' }));
+app.use(cors({ origin: process.env.CORS_ORIGIN }));
 
-app.listen(3000, () => console.log('Server started at port : 3000'));
+app.listen(process.env.SERVER_PORT, () => console.log('Server started at port : ' + process.env.SERVER_PORT));
 
 
 app.use('/research', researchController);

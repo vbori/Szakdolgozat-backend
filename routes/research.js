@@ -1,7 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const passport = require('passport');
 const jwt = require('jsonwebtoken');
 
 const Researcher = require('../models/researcher');
@@ -26,26 +24,6 @@ router.post('/register', async (req, res) => {
                 console.log('Error in researcher save: ' + JSON.stringify(err, undefined, 2));
             }
         });
-    } catch {
-        res.status(500).send()
-    }
-});
-
-router.post('/login', async (req, res) => {
-    const researcher = await Researcher.findResearcherByUsername(req.body.username);
-
-    if (!researcher) {
-      return res.status(400).send('Cannot find user')
-    }
-
-    try {
-        if(await bcrypt.compare(req.body.password, researcher.password)) {
-            const user = {name: req.body.username}
-            const accessToken = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET)
-            res.json({accessToken: accessToken})
-        } else {
-            res.send('Not Allowed')
-        }
     } catch {
         res.status(500).send()
     }
