@@ -30,9 +30,9 @@ app.use(cors({ origin: process.env.CORS_ORIGIN }));
 app.post('/token', async (req, res) => {
     if (req.body.token == null) return res.sendStatus(401);
     const refreshToken = await RefreshToken.findRefreshToken(req.body.token);
-    if (!refreshToken) return res.sendStatus(403);
+    if (!refreshToken) return res.status(403).json({ message: 'Refresh token not found' });
     jwt.verify(req.body.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403)
+        if (err) return res.setatus(403).json({ message: 'Refresh token verification failed' })
         const accessToken = generateAccessToken({ name: user.name })
         res.json({ accessToken: accessToken })
     })
@@ -49,7 +49,7 @@ app.post('/login', async (req, res) => {
         if(await bcrypt.compare(req.body.password, researcher.password)) {
             const user = {name: req.body.username}
             const accessToken = generateAccessToken(user)
-            const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
+            const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME })
             const newRefreshToken = new RefreshToken({
                 token: refreshToken
             });
@@ -72,7 +72,7 @@ app.post('/login', async (req, res) => {
 });
 
 function generateAccessToken(user) {
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.TOKEN_EXPIRATION_TIME })
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_TIME })
 }
 
 app.listen(process.env.AUTH_PORT, () => console.log('Server started at port : ' + process.env.AUTH_PORT));

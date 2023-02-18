@@ -1,44 +1,34 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
+const bcrypt   = require('bcryptjs');
 
 const Researcher = require('../models/researcher');
 
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', async (req, res) => {
     res.send(req.user.name)
 });
 
-router.post('/register', async (req, res) => {
-    try {
-        let newResearcher = new Researcher({
-            username: req.body.username,
-            password: req.body.password,
-            experiments: [],
-            liveExperimentCount: 0
-        });
+router.post('/changePassword', async (req, res) => {
+    const researcher = await Researcher.findResearcherByUsername(req.user.name);
+    if (!researcher) {
+        return res.status(400).send('Cannot find user')
+    }
 
-        Researcher.addResearcher(newResearcher, (err, doc) => {
-            if (!err) {
-                res.send(doc);
-            } else {
-                console.log('Error in researcher save: ' + JSON.stringify(err, undefined, 2));
-            }
-        });
+    try {
+        if(await bcrypt.compare(req.body.oldPassword, researcher.password)) {
+            Researcher.changePassword(researcher, req.body.newPassword, (err, doc) => {
+                if (!err) {
+                    res.send('Password changed')
+                } else {
+                    console.log('Error in researcher save: ' + JSON.stringify(err, undefined, 2));
+                }
+            });
+        } else {
+            res.send('Not Allowed')
+        }
     } catch {
         res.status(500).send()
     }
 });
-
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
-    if (token == null) return res.sendStatus(401)
-
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-        if(err) return res.sendStatus(403)
-        req.user = user
-        next()
-    })
-}
 
 module.exports = router;

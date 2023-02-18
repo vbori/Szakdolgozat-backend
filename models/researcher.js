@@ -24,11 +24,27 @@ module.exports.findResearcherByUsername = function(username) {
 }
 
 module.exports.addResearcher = function(newResearcher, callback) {
-    bcrypt.genSalt(10, (err, salt) => {
+    bcrypt.genSalt(process.env.SALT_ROUNDS, (err, salt) => {
         bcrypt.hash(newResearcher.password, salt, (err, hash) => {
             if (err) throw err;
             newResearcher.password = hash;
             newResearcher.save(callback);
+        });
+    });
+}
+
+module.exports.addExperiment = function(researcher, experiment, callback) {
+    researcher.experiments.push(experiment);
+    researcher.liveExperimentCount++;
+    researcher.save(callback);
+}
+
+module.exports.changePassword = function(researcher, newPassword, callback) {
+    bcrypt.genSalt(process.env.SALT_ROUNDS, (err, salt) => {
+        bcrypt.hash(newPassword, salt, (err, hash) => {
+            if (err) throw err;
+            researcher.password = hash;
+            researcher.save(callback);
         });
     });
 }

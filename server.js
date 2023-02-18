@@ -4,9 +4,12 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const researchController = require('./routes/research.js');
 const passport = require('passport');
 const session = require('express-session');
+
+const researchController = require('./routes/research.js');
+const registerController = require('./routes/register.js');
+const verifyJWT = require('./middleware/verifyJWT.js');
 
 mongoose.connect(process.env.DATABASE, (err) => {
     if (!err)
@@ -26,5 +29,7 @@ app.use(cors({ origin: process.env.CORS_ORIGIN }));
 
 app.listen(process.env.SERVER_PORT, () => console.log('Server started at port : ' + process.env.SERVER_PORT));
 
+app.use('/register', registerController);
 
+app.use(verifyJWT);
 app.use('/research', researchController);
