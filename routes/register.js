@@ -7,7 +7,7 @@ router.post('/researcher', async (req, res) => {
     const researcher = await Researcher.findResearcherByUsername(req.body.username);
 
     if (researcher) {
-      return res.status(400).send('Username already exists')
+      return res.status(400).send('Username already exists');
     }
 
     try {
@@ -26,7 +26,7 @@ router.post('/researcher', async (req, res) => {
             }
         });
     } catch {
-        res.status(500).send()
+        res.status(500).send();
     }
 });
 

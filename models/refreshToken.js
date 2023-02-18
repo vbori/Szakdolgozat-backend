@@ -16,3 +16,7 @@ module.exports.findRefreshToken = function(token) {
 module.exports.addRefreshToken = function(newRefreshToken, callback) {
     newRefreshToken.save(callback);
 }
+
+module.exports.deleteRefreshToken = function(token, callback) {
+    token.remove(callback);
+}
