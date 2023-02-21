@@ -1,3 +1,4 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt   = require('bcryptjs');
 
@@ -24,7 +25,7 @@ module.exports.findResearcherByUsername = function(username) {
 }
 
 module.exports.addResearcher = function(newResearcher, callback) {
-    bcrypt.genSalt(process.env.SALT_ROUNDS, (err, salt) => {
+    bcrypt.genSalt(parseInt(process.env.SALT_ROUNDS), (err, salt) => {
         bcrypt.hash(newResearcher.password, salt, (err, hash) => {
             if (err) throw err;
             newResearcher.password = hash;
@@ -40,7 +41,7 @@ module.exports.addExperiment = function(researcher, experiment, callback) {
 }
 
 module.exports.changePassword = function(researcher, newPassword, callback) {
-    bcrypt.genSalt(process.env.SALT_ROUNDS, (err, salt) => {
+    bcrypt.genSalt(parseInt(process.env.SALT_ROUNDS), (err, salt) => {
         bcrypt.hash(newPassword, salt, (err, hash) => {
             if (err) throw err;
             researcher.password = hash;

@@ -42,7 +42,7 @@ app.post('/login', async (req, res) => {
     const researcher = await Researcher.findResearcherByUsername(req.body.username);
 
     if (!researcher) {
-      return res.status(400).send('Cannot find user');
+      return res.sendStatus(401);
     }
 
     try {
@@ -54,33 +54,34 @@ app.post('/login', async (req, res) => {
                 token: refreshToken
             });
 
-            RefreshToken.addRefreshToken(newRefreshToken, (err, doc) => {
+            RefreshToken.addRefreshToken(newRefreshToken, (err, token) => {
                 if (!err) {
                     console.log('Refresh token saved');
-                    res.json({ accessToken: accessToken, refreshToken: refreshToken });
+                    res.status(201).json({ accessToken: accessToken, refreshToken: refreshToken });
                 } else {
                     console.log('Error in refresh token save: ' + JSON.stringify(err, undefined, 2));
                 }
             });
             
         } else {
-            res.send('Not Allowed');
+            res.sendStatus(401);
         }
     } catch {
         res.status(500).send();
     }
 });
 
-app.post('/logout', async (req, res) => {
+app.delete('/logout', async (req, res) => {
     if (req.body.token == null) return res.sendStatus(401);
     const refreshToken = await RefreshToken.findRefreshToken(req.body.token);
     if (!refreshToken) return res.status(403).json({ message: 'Refresh token not found' });
     RefreshToken.deleteRefreshToken(refreshToken, (err, doc) => {
         if (!err) {
             console.log('Refresh token deleted');
-            res.send('Refresh token deleted');
+            res.sendStatus(204);
         } else {
             console.log('Error in refresh token delete: ' + JSON.stringify(err, undefined, 2));
+            res.sendStatus(500);
         }
     });
 });

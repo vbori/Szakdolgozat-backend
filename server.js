@@ -9,8 +9,11 @@ const session = require('express-session');
 
 const researchController = require('./routes/research.js');
 const registerController = require('./routes/register.js');
+const participantController = require('./routes/participant.js');
+const experimentController = require('./routes/experiment.js');
 const verifyJWT = require('./middleware/verifyJWT.js');
 
+mongoose.set('strictQuery', false);
 mongoose.connect(process.env.DATABASE, (err) => {
     if (!err)
         console.log('MongoDB connection succeeded.');
@@ -21,7 +24,11 @@ mongoose.connect(process.env.DATABASE, (err) => {
 const app = express();
 
 app.use(bodyParser.json());
-app.use(session({ secret: 'SECRET' }));
+app.use(session({ 
+    secret: 'SECRET',
+    resave: true, 
+    saveUninitialized: true
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -30,6 +37,8 @@ app.use(cors({ origin: process.env.CORS_ORIGIN }));
 app.listen(process.env.SERVER_PORT, () => console.log('Server started at port : ' + process.env.SERVER_PORT));
 
 app.use('/register', registerController);
+app.use('/participant', participantController);
+app.use('/experiment', experimentController);
 
 app.use(verifyJWT);
 app.use('/research', researchController);

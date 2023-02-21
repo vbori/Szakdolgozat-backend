@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const bcrypt   = require('bcryptjs');
@@ -8,25 +9,27 @@ router.get('/', async (req, res) => {
     res.send(req.user.name);
 });
 
-router.post('/changePassword', async (req, res) => {
-    const researcher = await Researcher.findResearcherByUsername(req.user.name);
-    if (!researcher) {
-        return res.status(400).send('Cannot find user');
-    }
-
+router.patch('/changePassword', async (req, res) => {
     try {
+        const researcher = await Researcher.findResearcherByUsername(req.body.username);
+
+        if (!researcher) {
+            return res.status(400).json({message:'Cannot find user'});
+        }
+
         if(await bcrypt.compare(req.body.oldPassword, researcher.password)) {
-            Researcher.changePassword(researcher, req.body.newPassword, (err, doc) => {
+            Researcher.changePassword(researcher, req.body.newPassword, (err) => {
                 if (!err) {
-                    res.send('Password changed');
+                    res.status(200).json({message:'Password changed'});
                 } else {
+                    res.status(500).json({message:'Password not changed'});
                     console.log('Error in researcher save: ' + JSON.stringify(err, undefined, 2));
                 }
             });
         } else {
-            res.send('Not Allowed');
+            res.status(401).json({message:'Not Allowed'});
         }
-    } catch {
+    } catch (err){
         res.status(500).send();
     }
 });
