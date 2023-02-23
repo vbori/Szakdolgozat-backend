@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 
+mongoose.set('strictQuery', false);
 mongoose.connect(process.env.DATABASE, (err) => {
     if (!err)
         console.log('MongoDB connection succeeded.');
@@ -21,7 +22,11 @@ const Researcher = require('./models/researcher');
 const RefreshToken = require('./models/refreshToken');
 
 app.use(bodyParser.json());
-app.use(session({ secret: 'SECRET' }));
+app.use(session({ 
+    secret: 'SECRET',
+    resave: true, 
+    saveUninitialized: true
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
