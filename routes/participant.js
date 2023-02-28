@@ -4,16 +4,6 @@ const router = express.Router();
 
 const Participant = require('../models/participant');
 
-router.get('/', async (req, res) => {
-    try{
-        let participants = await Participant.findParticipantsByExperimentId(req.body.experimentId);
-        res.status(200).json(participants);
-    }
-    catch(err){
-        res.status(500).json({message:'Error in finding participants'});
-    } 
-});
-
 router.patch('/addresponses', async (req, res) => {
     Participant.addResponses(req.body.participantId, req.body.responses, (err) => {
         if (!err) {

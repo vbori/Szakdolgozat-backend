@@ -3,6 +3,7 @@ const router = express.Router();
 
 const Researcher = require('../models/researcher');
 const Participant = require('../models/participant');
+const Experiment = require('../models/experiment');
 
 router.post('/researcher', async (req, res) => {
     const researcher = await Researcher.findResearcherByUsername(req.body.username);
@@ -40,7 +41,15 @@ router.post('/participant', async (req, res) => {
 
         Participant.addParticipant(newParticipant, (err, participant) => {
             if (!err) {
-                res.status(201).send(participant);
+                const update = { $inc: { participantNum: 1 } };
+                Experiment.updateExperiment(req.body.experimentId, update, (err) => {
+                    if(!err) {
+                        res.status(201).send(participant);
+                    } else {
+                        console.log('Error in experiment update: ' + JSON.stringify(err, undefined, 2));
+                        res.status(500).json({message:'Participant not added'});
+                    }
+                });
             } else {
                 console.log('Error in participant save: ' + JSON.stringify(err, undefined, 2));
             }

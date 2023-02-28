@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const ObjectId = require('mongodb').ObjectId; 
 
-const responsesSchema = new mongoose.Schema({
+const ResponsesSchema = new mongoose.Schema({
     questionId: { type: String, required: true },
     response: { type: mongoose.Schema.Types.Mixed, required: true }
 });
@@ -12,7 +12,7 @@ const ParticipantSchema = new mongoose.Schema({
         required: true
     },
 
-    responses: [responsesSchema],
+    responses: [ResponsesSchema],
 
     inControlGroup: { 
         type: Boolean ,

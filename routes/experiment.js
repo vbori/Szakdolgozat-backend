@@ -3,16 +3,17 @@ const express = require('express');
 const router = express.Router();
 
 const Participant = require('../models/participant');
+const Experiment = require('../models/experiment');
+const Form = require('../models/form');
 
-router.delete('/deleteExperiment', async (req, res) => {
-    Participant.deleteParticipants(req.body.experimentId, (err) => {
-        if (!err) {
-            res.status(200).json({message:'Participants deleted'});
-        } else {
-            res.status(500).json({message:'Participants not deleted'});
-            console.log('Error in participant delete: ' + JSON.stringify(err, undefined, 2));
-        }
-    });
+router.get('/participants', async (req, res) => {
+    try{
+        let participants = await Participant.findParticipantsByExperimentId(req.body.experimentId);
+        res.status(200).json(participants);
+    }
+    catch(err){
+        res.status(500).json({message:'Error in finding participants'});
+    } 
 });
 
 module.exports = router;

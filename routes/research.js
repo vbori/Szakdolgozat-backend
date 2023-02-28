@@ -7,9 +7,17 @@ const Researcher = require('../models/researcher');
 const Form = require('../models/form');
 const ObjectId = require('mongodb').ObjectId; 
 const Participant = require('../models/participant');
+const Experiment = require('../models/experiment');
 
 router.get('/', async (req, res) => {
-    res.send(req.user.name);
+    Experiment.getExperimentsByResearcherId(req.body.researcherId, (err, experiments) => {
+        if (!err) {
+            res.status(200).json(experiments);
+        } else {
+            res.status(500).json({message:'Error in experiment find'});
+            console.log('Error in experiment find: ' + JSON.stringify(err, undefined, 2));
+        }
+    });
 });
 
 router.patch('/changePassword', async (req, res) => {
@@ -41,29 +49,36 @@ router.post('/addForm', async (req, res) => {
     try {
         let newForm = new Form({
             researcherId: ObjectId(req.body.researcherId),
-            experimentId: req.body.experimentId,
+            experimentId: ObjectId(req.body.experimentId),
             questions: req.body.questions
         });
 
         Form.addForm(newForm, (err, form) => {
             if (!err) {
-                res.status(201).send(form);
+                Experiment.updateExperiment(req.body.experimentId, { $set: { formId: form._id } }, (err) => {
+                    if(!err) {
+                        res.status(201).send(form);
+                    } else {
+                        console.log('Error in experiment update: ' + JSON.stringify(err, undefined, 2));
+                        res.status(500).json({message:'Error in saving form'});
+                    }
+                });
             } else {
                 console.log('Error in form save: ' + JSON.stringify(err, undefined, 2));
                 throw err;
             }
         });
     } catch {
-        res.status(500).send();
+        res.status(500).json({message:'Error in saving form'});
     }
 });
 
 router.get('/getForm', async (req, res) => {
     try{
         let form = await Form.findFormByExperimentId(req.body.experimentId);
-        res.status(201).json(form);
+        res.status(200).json(form);
     } catch (err){
-        res.status(500).send();
+        res.status(500).json({message:'Error in getting form'});
     }
 });
 
@@ -78,20 +93,76 @@ router.patch('/editForm', async (req, res) => {
     });
 });
 
+router.post('/addExperiment', async (req, res) => {
+    
+    let newExperiment = new Experiment({
+        researcherId: ObjectId(req.body.researcherId),
+        name: req.body.name,
+        type: req.body.type,
+        status: "Draft",
+        participantNum: 0,
+        maxParticipantNum: req.body.maxParticipantNum,
+        controlGroupSize: req.body.controlGroupSize,
+        trajectoryImageNeeded: req.body.trajectoryImageNeeded,
+        positionArrayNeeded: req.body.positionArrayNeeded,
+        researcherDescription: req.body.researcherDescription,
+        participantDescription: req.body.participantDescription,
+        rounds: []
+    });
+
+    Experiment.addExperiment(newExperiment, (err, experiment) => {
+        if(!err){
+            res.status(201).send(experiment);
+        }else{
+            res.status(500).json({message: 'Experiment not added'});
+        }
+    });
+    
+});
+
 router.delete('/deleteExperiment', async (req, res) => {
-    Form.deleteForm(req.body.experimentId, (err) => {
+    Participant.deleteParticipants(req.body.experimentId, (err) => {
         if (!err) {
-            Participant.deleteParticipants(req.body.experimentId, (err) => {
+            Form.deleteForm(req.body.experimentId, (err) => {
                 if (!err) {
-                    res.status(200).json({message:'Experiment deleted'});
+                    Experiment.deleteExperiment(req.body.experimentId, (err) => {
+                        if (!err) {
+                            res.status(200).json({message:'Experiment deleted'});
+                        } else {
+                            res.status(500).json({message:'Experiment not deleted'});
+                            console.log('Error in experiment delete: ' + JSON.stringify(err, undefined, 2));
+                        }
+                    });
                 } else {
                     res.status(500).json({message:'Experiment not deleted'});
-                    console.log('Error in participant delete: ' + JSON.stringify(err, undefined, 2));
+                    console.log('Error in form delete: ' + JSON.stringify(err, undefined, 2));
                 }
             });
         } else {
             res.status(500).json({message:'Experiment not deleted'});
-            console.log('Error in form delete: ' + JSON.stringify(err, undefined, 2));
+            console.log('Error in participant delete: ' + JSON.stringify(err, undefined, 2));
+        }
+    });
+});
+
+router.patch('/editExperiment', async (req, res) => {
+    Experiment.updateExperiment(req.body.experimentId, req.body.updatedExperiment, (err, experiment) => {
+        if (!err) {
+            res.status(200).send(experiment);
+        } else {
+            res.status(500).json({message:'Experiment not updated'});
+            console.log('Error in experiment update: ' + JSON.stringify(err, undefined, 2));
+        }
+    });
+});
+
+router.get('/getExperiment', async (req, res) => {
+    Experiment.getExperimentById(req.body.experimentId, (err, experiment) => {
+        if (!err) {
+            res.status(200).send(experiment);
+        } else {
+            res.status(500).json({message:'Experiment not found'});
+            console.log('Error in experiment find: ' + JSON.stringify(err, undefined, 2));
         }
     });
 });

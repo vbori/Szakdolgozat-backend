@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const ObjectId = require('mongodb').ObjectId; 
 
-const validationsSchema = new mongoose.Schema({
+const ValidationSchema = new mongoose.Schema({
     min: {
         type: Number,
         required: true
@@ -12,7 +12,7 @@ const validationsSchema = new mongoose.Schema({
     }
 });
 
-const questionSchema = new mongoose.Schema({
+const QuestionSchema = new mongoose.Schema({
     questionId: {
         type: String,
         required: true
@@ -29,7 +29,7 @@ const questionSchema = new mongoose.Schema({
         type: [String]
     },
     validation: {
-        type: validationsSchema
+        type: ValidationSchema
     },
     required: {
         type: Boolean,
@@ -46,7 +46,7 @@ const FormSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    questions: [questionSchema]
+    questions: [QuestionSchema]
 });
 
 const Form = mongoose.model('Form', FormSchema);
