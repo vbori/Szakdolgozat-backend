@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const ObjectId = require('mongodb').ObjectId; 
+import { Schema, model } from 'mongoose';
+import { ObjectId } from 'mongodb'; 
 
-const ValidationSchema = new mongoose.Schema({
+const ValidationSchema = new Schema({
     min: {
         type: Number,
         required: true
@@ -12,7 +12,7 @@ const ValidationSchema = new mongoose.Schema({
     }
 });
 
-const QuestionSchema = new mongoose.Schema({
+const QuestionSchema = new Schema({
     questionId: {
         type: String,
         required: true
@@ -25,19 +25,15 @@ const QuestionSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    options: {
-        type: [String]
-    },
-    validation: {
-        type: ValidationSchema
-    },
+    options: [String],
+    validation: ValidationSchema,
     required: {
         type: Boolean,
         required: true
     }
 });
 
-const FormSchema = new mongoose.Schema({
+const FormSchema = new Schema({
     researcherId: {
         type: ObjectId,
         required: true
@@ -49,35 +45,24 @@ const FormSchema = new mongoose.Schema({
     questions: [QuestionSchema]
 });
 
-const Form = mongoose.model('Form', FormSchema);
-module.exports = Form;
+const Form = model('Form', FormSchema);
+export default Form;
 
-module.exports.findFormByExperimentId = function(experimentId) {
-    const query = {experimentId: experimentId};
-    return Form.find(query).exec();
+export async function findForm(experimentId, researcherId) {
+    const query = {experimentId: ObjectId(experimentId), researcherId: ObjectId(researcherId)};
+    return Form.findOne(query).lean().exec();
 }
 
-module.exports.deleteForm = async function(experimentId, callback) {
-    try{
-        const query = {experimentId: experimentId};
-        await Form.remove(query);
-        callback(null);
-    } catch (err) {
-        callback(err);
-    }
+export async function deleteForm(experimentId) {
+    const query = {experimentId: ObjectId(experimentId)};
+    return Form.deleteOne(query).exec();
 }
 
-module.exports.addForm = function(newForm, callback) {
-    newForm.save(callback);
+export async function addForm(newForm) {
+    return newForm.save();
 }
 
-module.exports.editForm = async function(experimentId, questions, callback) {
-    try {
-        const form = await Form.findOne({experimentId: experimentId});
-        if(!form) throw new Error('Form not found');
-        form.questions = questions;
-        form.save(callback);
-    }  catch(err) {
-        callback(err);
-    } 
+export async function editForm(experimentId, researcherId, editedForm) {
+    const filter = { experimentId: ObjectId(experimentId), researcherId: ObjectId(researcherId) };
+    return Form.findOneAndUpdate(filter, editedForm, { new: true }).lean().exec();
 }

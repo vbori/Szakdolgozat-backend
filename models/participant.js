@@ -1,14 +1,14 @@
-const mongoose = require('mongoose');
-const ObjectId = require('mongodb').ObjectId; 
+import { Schema, model } from 'mongoose';
+import { ObjectId } from 'mongodb';
 
-const ResponsesSchema = new mongoose.Schema({
+const ResponsesSchema = new Schema({
     questionId: { type: String, required: true },
-    response: { type: mongoose.Schema.Types.Mixed, required: true }
+    response: { type: Schema.Types.Mixed, required: true }
 });
 
-const ParticipantSchema = new mongoose.Schema({
+const ParticipantSchema = new Schema({
     experimentId: { 
-        type: String ,
+        type: ObjectId,
         required: true
     },
 
@@ -20,38 +20,31 @@ const ParticipantSchema = new mongoose.Schema({
     }
 });
 
-const Participant = mongoose.model('Participant', ParticipantSchema);
+const Participant = model('Participant', ParticipantSchema);
 
-module.exports =  Participant;
+export default  Participant;
 
-module.exports.findParticipantsByExperimentId = function(experimentId) {
-    const query = {experimentId: experimentId};
+export async function findParticipantsByExperimentId (experimentId) {
+    const query = { experimentId: ObjectId(experimentId) };
     return Participant.find(query).exec();
 }
-
-module.exports.deleteParticipants = async function(experimentId, callback) {
-    try{
-        const query = {experimentId: experimentId};
-        await Participant.remove(query);
-        callback(null);
-    } catch (err) {
-        callback(err);
-    }
+  
+export async function deleteParticipants (experimentId) {
+    const query = { experimentId: ObjectId(experimentId) };
+    return Participant.deleteMany(query).exec();
 }
-
-module.exports.addParticipant = function(newParticipant, callback) {
-    newParticipant.save(callback);
+  
+export async function addParticipant (newParticipant) {
+    return newParticipant.save();
 }
-
-module.exports.addResponses = async function(participantId, responses, callback) {
-    let participant;
+  
+export async function addResponses (participantId, responses) {
     try {
-        participant = await Participant.findOne(ObjectId(participantId));
-        if(!participant) throw new Error('Participant not found');
+        const participant = await Participant.findOne(ObjectId(participantId));
+        if (!participant) return null;
         participant.responses.push(...responses);
-        participant.save(callback);
-    }  catch(err) {
-        callback(err);
+        return participant.save();
+    } catch (err) {
+        throw err;
     }
-    
 }

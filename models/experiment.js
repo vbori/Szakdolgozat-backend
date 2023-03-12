@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
+import { Schema, model } from 'mongoose';
+import { ObjectId } from 'mongodb';
 
-const ShapeSchema = new mongoose.Schema({
+const ShapeSchema = new Schema({
     shapeType: {
         type: String,
         required: true
@@ -41,7 +42,7 @@ const ShapeSchema = new mongoose.Schema({
     }
 });
 
-const BackGroundDistractionSchema = new mongoose.Schema({
+const BackGroundDistractionSchema = new Schema({
     backGroundDistractionColor: {
         type: String,
         required: true
@@ -62,7 +63,7 @@ const BackGroundDistractionSchema = new mongoose.Schema({
     }
 });
 
-const ShapeDistractionSchema = new mongoose.Schema({
+const ShapeDistractionSchema = new Schema({
     distractingShapes: {
         type: [ShapeSchema],
         required: true
@@ -77,7 +78,7 @@ const ShapeDistractionSchema = new mongoose.Schema({
     }
 });
 
-const RoundSchema = new mongoose.Schema({
+const RoundSchema = new Schema({
     roundIdx: {
         type: Number,
         required: true
@@ -102,7 +103,7 @@ const RoundSchema = new mongoose.Schema({
     }
 });
 
-const BackGroundDistractionConfigSchema = new mongoose.Schema({
+const BackGroundDistractionConfigSchema = new Schema({
     backGroundDistractionColor: {
         type: String,
         required: true
@@ -117,7 +118,7 @@ const BackGroundDistractionConfigSchema = new mongoose.Schema({
     }
 });
 
-const DistractingShapeConfigSchema = new mongoose.Schema({
+const DistractingShapeConfigSchema = new Schema({
     distractingShapeMinWidth: {
         type: Number,
         required: true
@@ -152,7 +153,7 @@ const DistractingShapeConfigSchema = new mongoose.Schema({
     }
 });
 
-const ConfigurationSchema = new mongoose.Schema({
+const ConfigurationSchema = new Schema({
     setNum: {
         type: Number,
         required: true
@@ -222,13 +223,13 @@ const ConfigurationSchema = new mongoose.Schema({
 });
 
 
-const ExperimentSchema = new mongoose.Schema({
+const ExperimentSchema = new Schema({
     researcherId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         required: true
     },
     formId: {
-        type: mongoose.Schema.Types.ObjectId
+        type: Schema.Types.ObjectId
     },
     name: {
         type: String,
@@ -287,32 +288,33 @@ const ExperimentSchema = new mongoose.Schema({
     }
 });
 
-const Experiment = mongoose.model('Experiment', ExperimentSchema);
-module.exports = Experiment;
+const Experiment = model('Experiment', ExperimentSchema);
+export default Experiment;
 
-module.exports.getExperimentById = function (id, callback) {
-    Experiment.findById(id).exec(callback);
+export async function getExperimentById (experimentId, researcherId) {
+    const query = { _id: ObjectId(experimentId), researcherId: ObjectId(researcherId) };
+    return Experiment.findOne(query).lean().exec();
 }
 
-module.exports.getExperimentsByResearcherId = function (researcherId, callback) {
+export async function getExperimentsByResearcherId (researcherId) {
     const query = {researcherId: researcherId};
-    Experiment.find(query).exec(callback);
+    return Experiment.find(query).lean().exec();
 }
 
-module.exports.getExperimentsByResearcherIdAndStatus = function (researcherId, status, callback) {
-    const query = {researcherId: researcherId, status: status};
-    Experiment.find(query).exec(callback);
+export async function getExperimentsByResearcherIdAndStatus (researcherId, status) {
+    const query = {researcherId: ObjectId(researcherId), status: status};
+    return Experiment.find(query).lean().exec();
 }
 
-module.exports.addExperiment = function (newExperiment, callback) {
-    newExperiment.save(callback);
+export async function addExperiment (newExperiment) {
+    return newExperiment.save();
 }
 
-module.exports.updateExperiment = function (experimentId, updatedExperiment, callback) {
-    const filter = { _id: experimentId };
-    Experiment.findOneAndUpdate(filter, updatedExperiment, { new: true }, callback);
+export async function updateExperiment (experimentId, researcherId, updatedExperiment) {
+    const filter = { _id: ObjectId(experimentId), researcherId: ObjectId(researcherId) };
+    return Experiment.findOneAndUpdate(filter, updatedExperiment, { new: true }).lean().exec();
 }
 
-module.exports.deleteExperiment = function (experimentId, callback) {
-    Experiment.findByIdAndDelete(experimentId, callback);
+export async function deleteExperiment (experimentId) {
+    return Experiment.findByIdAndDelete(experimentId).exec();
 }

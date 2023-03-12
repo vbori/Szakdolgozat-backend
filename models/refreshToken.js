@@ -1,22 +1,21 @@
-const mongoose = require('mongoose');
+import { Schema, model } from 'mongoose';
 
-const RefreshTokenSchema = new mongoose.Schema({
+const RefreshTokenSchema = new Schema({
   token: { type: String, required: true },
 });
 
-const RefreshToken = mongoose.model('RefreshToken', RefreshTokenSchema);
+const RefreshToken = model('RefreshToken', RefreshTokenSchema);
 
-module.exports = RefreshToken;
+export default RefreshToken;
 
-module.exports.findRefreshToken = function(token) {
-    const query = {token: token};
-    return RefreshToken.findOne(query).exec();
+export async function findRefreshToken(token) {
+    return RefreshToken.findOne({token}).lean().exec();
 }
 
-module.exports.addRefreshToken = function(newRefreshToken, callback) {
-    newRefreshToken.save(callback);
+export async function addRefreshToken(newRefreshToken) {
+    return newRefreshToken.save().then(doc => doc.toObject());
 }
 
-module.exports.deleteRefreshToken = function(token, callback) {
-    token.remove(callback);
+export async function deleteRefreshToken(token) {
+    return RefreshToken.deleteOne(token).exec();
 }

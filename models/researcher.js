@@ -1,8 +1,11 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
-const bcrypt   = require('bcryptjs');
+import {config} from 'dotenv';
+import { Schema, model } from 'mongoose';
+import pkg from 'bcryptjs';
+const { genSalt, hash: _hash } = pkg;
 
-const ResearcherSchema = new mongoose.Schema({
+config();
+
+const ResearcherSchema = new Schema({
     username: { 
         type: String ,
         required: true
@@ -11,41 +14,45 @@ const ResearcherSchema = new mongoose.Schema({
         type: String ,
         required: true
     },
-    experiments: { type: Array },
     liveExperimentCount: { type: Number }
 });
 
-const Researcher = mongoose.model('Researcher', ResearcherSchema);
+const Researcher = model('Researcher', ResearcherSchema);
 
-module.exports =  Researcher;
+export default Researcher;
 
-module.exports.findResearcherByUsername = function(username) {
+export async function findResearcherByUsername(username) {
     const query = {username: username};
     return Researcher.findOne(query).exec();
 }
 
-module.exports.addResearcher = function(newResearcher, callback) {
-    bcrypt.genSalt(parseInt(process.env.SALT_ROUNDS), (err, salt) => {
-        bcrypt.hash(newResearcher.password, salt, (err, hash) => {
-            if (err) throw err;
-            newResearcher.password = hash;
-            newResearcher.save(callback);
-        });
-    });
+export async function findResearcherById(id) {
+    return Researcher.findById(id).exec();
 }
 
-module.exports.addExperiment = function(researcher, experiment, callback) {
-    researcher.experiments.push(experiment);
-    researcher.liveExperimentCount++;
-    researcher.save(callback);
+export async function addResearcher(newResearcher) {
+    const salt = await genSalt(parseInt(process.env.SALT_ROUNDS));
+    const hash = await hashPassword(newResearcher.password, salt);
+    newResearcher.password = hash;
+    return newResearcher.save();
 }
 
-module.exports.changePassword = function(researcher, newPassword, callback) {
-    bcrypt.genSalt(parseInt(process.env.SALT_ROUNDS), (err, salt) => {
-        bcrypt.hash(newPassword, salt, (err, hash) => {
-            if (err) throw err;
-            researcher.password = hash;
-            researcher.save(callback);
-        });
-    });
+export async function changeOpenExperimentCount(researcherId, change) {
+    return Researcher.findByIdAndUpdate(researcherId, {$inc: {liveExperimentCount: change}}, {new: true}).lean().exec();
 }
+
+export async function changePassword(researcher, newPassword) {
+    const salt = await genSalt(parseInt(process.env.SALT_ROUNDS));
+    const hash = await hashPassword(newPassword, salt);
+    researcher.password = hash;
+    return researcher.save();
+}
+
+async function hashPassword(password, salt) {
+    return new Promise((resolve, reject) => {
+      _hash(password, salt, (err, hash) => {
+        if (err) reject(err);
+        else resolve(hash);
+      });
+    });
+  }

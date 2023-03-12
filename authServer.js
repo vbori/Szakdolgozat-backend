@@ -1,98 +1,101 @@
-require('dotenv').config();
+import {config} from 'dotenv';
+import express from 'express';
+import bodyparser from 'body-parser';
+import cors from 'cors';
+import { set, connect } from 'mongoose';
+import passport from 'passport';
+import jsonwebtoken from 'jsonwebtoken';
+import session from 'express-session';
+import bcryptjs from 'bcryptjs';
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
-const session = require('express-session');
-const bcrypt = require('bcryptjs');
+import {findResearcherByUsername} from './models/researcher.js';
+import RefreshToken, {findRefreshToken, addRefreshToken, deleteRefreshToken} from './models/refreshToken.js';
 
-mongoose.set('strictQuery', false);
-mongoose.connect(process.env.DATABASE, (err) => {
+config();
+
+set('strictQuery', false);
+connect(process.env.DATABASE, (err) => {
     if (!err)
         console.log('MongoDB connection succeeded.');
     else
-        console.log('Error in DB connection : ' + JSON.stringify(err, undefined, 2));
+        console.log(`Error in DB connection : ${err}`);
 });
 
+const { verify, sign } = jsonwebtoken;
+const { compare } = bcryptjs;
 const app = express();
-const Researcher = require('./models/researcher');
-const RefreshToken = require('./models/refreshToken');
 
-app.use(bodyParser.json());
+app.use(bodyparser.json());
+app.use(cors({ origin: process.env.CORS_ORIGIN }));
 app.use(session({ 
-    secret: 'SECRET',
+    secret: process.env.AUTH_SESSION_SECRET,
     resave: true, 
     saveUninitialized: true
 }));
 app.use(passport.initialize());
 app.use(passport.session());
-
-app.use(cors({ origin: process.env.CORS_ORIGIN }));
+app.listen(process.env.AUTH_PORT, () => console.log('Server started at port : ' + process.env.AUTH_PORT));
 
 app.post('/token', async (req, res) => {
-    if (req.body.token == null) return res.sendStatus(401);
-    const refreshToken = await RefreshToken.findRefreshToken(req.body.token);
-    if (!refreshToken) return res.status(403).json({ message: 'Refresh token not found' });
-    jwt.verify(req.body.token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-        if (err) return res.setatus(403).json({ message: 'Refresh token verification failed' })
-        const accessToken = generateAccessToken({ name: user.name });
-        res.json({ accessToken: accessToken });
-    })
+    try{
+        if (req.body.token == null) return res.sendStatus(401);
+        const refreshToken = await findRefreshToken(req.body.token);
+        if (!refreshToken){
+            return res.status(403).json({ message: 'Refresh token not found' });
+        }else{
+            const decoded = verify(req.body.token, process.env.REFRESH_TOKEN_SECRET);
+            const accessToken = generateAccessToken({ _id: decoded._id });
+            res.status(201).send(accessToken);
+        }
+    }catch(err){
+        res.status(500).json({message:'Error in finding refresh token'});
+        console.log(`Error in finding refresh token: ${err}`);
+    }
 });
 
 app.post('/login', async (req, res) => {
-    const researcher = await Researcher.findResearcherByUsername(req.body.username);
-
-    if (!researcher) {
-      return res.sendStatus(401);
-    }
-
     try {
-        if(await bcrypt.compare(req.body.password, researcher.password)) {
-            const user = {name: req.body.username};
+        const researcher = await findResearcherByUsername(req.body.username);
+
+        if (!researcher) {
+            return res.sendStatus(401);
+        }else if(await compare(req.body.password, researcher.password)) {
+            const user = {_id: researcher._id};
             const accessToken = generateAccessToken(user);
-            const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME });
+            const refreshToken = sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION_TIME });
             const newRefreshToken = new RefreshToken({
                 token: refreshToken
             });
 
-            RefreshToken.addRefreshToken(newRefreshToken, (err, token) => {
-                if (!err) {
-                    console.log('Refresh token saved');
-                    res.status(201).json({ accessToken: accessToken, refreshToken: refreshToken });
-                } else {
-                    console.log('Error in refresh token save: ' + JSON.stringify(err, undefined, 2));
-                }
-            });
-            
+            await addRefreshToken(newRefreshToken);
+            console.log('Refresh token saved');
+            res.status(201).json({ accessToken: accessToken, refreshToken: refreshToken }); 
         } else {
-            res.sendStatus(401);
+            res.status(401).json({message:'Authentication failed'});
         }
-    } catch {
-        res.status(500).send();
+    } catch(err) {
+        res.status(500).json({message:'Error during authentication'});
+        console.log(`Error during authentication: ${err}`);
     }
 });
 
 app.delete('/logout', async (req, res) => {
-    if (req.body.token == null) return res.sendStatus(401);
-    const refreshToken = await RefreshToken.findRefreshToken(req.body.token);
-    if (!refreshToken) return res.status(403).json({ message: 'Refresh token not found' });
-    RefreshToken.deleteRefreshToken(refreshToken, (err, doc) => {
-        if (!err) {
+    try{
+        if (req.query.token == null) return res.sendStatus(401);
+        const refreshToken = await findRefreshToken(req.query.token);
+        if (!refreshToken){
+            return res.status(403).json({ message: 'Refresh token not found' });
+        }else{
+            await deleteRefreshToken(refreshToken);
             console.log('Refresh token deleted');
             res.sendStatus(204);
-        } else {
-            console.log('Error in refresh token delete: ' + JSON.stringify(err, undefined, 2));
-            res.sendStatus(500);
         }
-    });
+    }catch(err){
+        res.status(500).json({message:'Error during logout'});
+        console.log(`Error during logout: ${err}`);
+    }
 });
 
 function generateAccessToken(user) {
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_TIME });
+    return sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_TIME });
 }
-
-app.listen(process.env.AUTH_PORT, () => console.log('Server started at port : ' + process.env.AUTH_PORT));
