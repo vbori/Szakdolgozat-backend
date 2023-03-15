@@ -18,8 +18,11 @@ router.get('/', async (req, res) => {
         const experiments = await getExperimentsByResearcherId(req.user._id);
         res.status(200).json(experiments);
     }catch(err){
-        res.status(500).json({message:'Error in finding experiments'});
         console.log(`Error in finding experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error in finding experiments'});
     }
 });
 
@@ -36,8 +39,12 @@ router.patch('/changePassword', async (req, res) => {
             res.status(401).json({message:'Not Allowed'});
         }
     }catch(err){
-        res.status(500).json({message:'Password not changed'});
         console.log(`Error in changing password: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Password not changed'});
+        
     }
 });
 
@@ -57,8 +64,11 @@ router.post('/addForm', async (req, res) => {
             res.status(201).send({message: 'Form saved', form});
         }
     } catch(err) {
-        res.status(500).json({message:'Error in saving form'});
         console.log(`Error in saving form: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error in saving form'});
     }
 });
 
@@ -71,8 +81,11 @@ router.get('/getForm', async (req, res) => {
             res.status(200).json(form);
         }
     }catch(err){
-        res.status(500).json({message:'Error in getting form'});
         console.log(`Error in finding form: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error in getting form'});
     }
 });
 
@@ -85,8 +98,11 @@ router.patch('/editForm', async (req, res) => {
             res.status(200).json({message:'Form edited', form: form});
         }
     }catch(err){
-        res.status(500).json({message:'Error during editing form'});
         console.log(`Error in editing form: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error during editing form'});
     }
 });
 
@@ -109,8 +125,11 @@ router.post('/addExperiment', async (req, res) => {
         const experiment = await addExperiment(newExperiment);
         res.status(201).json({message: 'Experiment created', experiment});
     }catch(err){
-        res.status(500).json({message: 'Error during experiment creation'});
         console.log(`Error in adding experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message: 'Error during experiment creation'});
     }
 });
 
@@ -127,8 +146,11 @@ router.delete('/deleteExperiment', async (req, res) => {
             res.status(200).json({message:'Experiment deleted'});
         }
     }catch(err){
-        res.status(500).json({message:'Error during experiment deletion'});
         console.log(`Error in deleting experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error during experiment deletion'});
     }
 });
 
@@ -141,8 +163,11 @@ router.patch('/editExperiment', async (req, res) => {
             res.status(200).json({message: 'Experiment edited', experiment: experiment});
         }
     }catch(err){
-        res.status(500).json({message:'Error during editing experiment'});
         console.log(`Error in updating experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error during editing experiment'});
     }
 });
 
@@ -156,8 +181,11 @@ router.patch('/openExperiment', async (req, res) => {
             res.status(200).json({message:'Experiment opened', experiment: experiment, researcher: researcher});
         }
     }catch(err){
-        res.status(500).json({message:'Error - Experiment not opened'});
         console.log(`Error in opening experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error - Experiment not opened'});
     }
 });
 
@@ -171,8 +199,11 @@ router.patch('/closeExperiment', async (req, res) => {
             res.status(200).json({message:'Experiment closed', experiment: experiment, researcher: researcher});
         }
     }catch(err){
-        res.status(500).json({message:'Error - Experiment not closed'});
         console.log(`Error in closing experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error - Experiment not closed'});
     }
 });
 
@@ -185,8 +216,11 @@ router.get('/getExperiment', async (req, res) => {
             res.status(200).json(experiment);
         }
     }catch(err){
-        res.status(500).json({message:'Experiment not found'});
         console.log(`Error in finding experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Experiment not found'});
     }
 });
 
@@ -200,8 +234,11 @@ router.get('/getResults', async (req, res) => {
             res.status(200).send(results);
         }
     }catch(err){
-        res.status(500).json({message:'Results not found'});
         console.log(`Error in finding results: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Results not found'});
     }
 });
 
@@ -215,8 +252,11 @@ router.get('/getParticipants', async (req, res) => {
             res.status(200).send(participants);
         }
     }catch(err){
-        res.status(500).json({message:'Participants not found'});
         console.log(`Error in finding participants: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Participants not found'});
     }
 });
 

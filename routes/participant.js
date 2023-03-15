@@ -10,11 +10,14 @@ const router = Router();
 router.patch('/addResponses', async (req, res) => {
     try{
         const participant = await addResponses(req.body.participantId, req.body.responses);
-        if(!participant) return res.status(400).json({message:'Cannot find participant'});
+        if(!participant) return res.status(400).json({message:'Invalid request'});
         res.status(200).json({message:'Responses added'});
     }catch(err){
-        res.status(500).json({message:'Responses not added'});
         console.log(`Error in saving response: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error during saving response'});
     }
 });
 
@@ -27,8 +30,11 @@ router.post('/addResult', async (req, res) => {
         await addResult(newResult);
         res.status(200).json({message:'Result added'});
     }catch(err){
-        res.status(500).json({message:'Result not added'});
         console.log(`Error in saving result: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error during saving result'});
     }
 });
 

@@ -21,8 +21,10 @@ router.post('/researcher', async (req, res) => {
         await addResearcher(newResearcher);
         res.status(200).json({message:'Researcher added'});
     } catch(err) {
+        if(err.name === 'ValidationError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
         console.log(`Error in adding researcher: ${err}`);
-        console.error(err);
         res.status(500).json({message:'Error during registration'});
     }
 });
@@ -30,7 +32,6 @@ router.post('/researcher', async (req, res) => {
 router.post('/participant', async (req, res) => {
     try {
         const experiment = await Experiment.findOne({_id: ObjectId(req.body.experimentId), status: 'Active'});
-        console.log(experiment);
         if(!experiment || experiment.participantNum >= experiment.maxParticipantNum) {
             return res.status(400).json({message:'Not Allowed'});
         }
@@ -45,6 +46,9 @@ router.post('/participant', async (req, res) => {
         await updateExperiment(req.body.experimentId, experiment.researcherId, update); 
         res.status(201).json({message: 'Successful authorization', participant: participant});
     } catch(err) {
+        if(err.name === 'ValidationError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
         console.log(`Error in participant registration: ${err}`);
         res.status(500).json({message:'Error during registration'});
     }

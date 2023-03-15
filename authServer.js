@@ -48,8 +48,11 @@ app.post('/token', async (req, res) => {
             res.status(201).send(accessToken);
         }
     }catch(err){
-        res.status(500).json({message:'Error in finding refresh token'});
         console.log(`Error in finding refresh token: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error in finding refresh token'});
     }
 });
 
@@ -74,8 +77,11 @@ app.post('/login', async (req, res) => {
             res.status(401).json({message:'Authentication failed'});
         }
     } catch(err) {
-        res.status(500).json({message:'Error during authentication'});
         console.log(`Error during authentication: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error during authentication'});
     }
 });
 
@@ -91,8 +97,11 @@ app.delete('/logout', async (req, res) => {
             res.sendStatus(204);
         }
     }catch(err){
-        res.status(500).json({message:'Error during logout'});
         console.log(`Error during logout: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error during logout'});
     }
 });
 
