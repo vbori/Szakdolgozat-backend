@@ -14,7 +14,7 @@ const ResearcherSchema = new Schema({
         type: String ,
         required: true
     },
-    liveExperimentCount: { type: Number }
+    activeExperimentCount: { type: Number }
 });
 
 const Researcher = model('Researcher', ResearcherSchema);
@@ -38,7 +38,7 @@ export async function addResearcher(newResearcher) {
 }
 
 export async function changeOpenExperimentCount(researcherId, change) {
-    return Researcher.findByIdAndUpdate(researcherId, {$inc: {liveExperimentCount: change}}, {new: true}).lean().exec();
+    return Researcher.findByIdAndUpdate(researcherId, {$inc: {activeExperimentCount: change}}, {new: true}).lean().exec();
 }
 
 export async function changePassword(researcher, newPassword) {
@@ -55,4 +55,4 @@ async function hashPassword(password, salt) {
         else resolve(hash);
       });
     });
-  }
+}

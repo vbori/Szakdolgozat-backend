@@ -2,11 +2,12 @@ import {config} from 'dotenv';
 import { Router } from 'express';
 import pkg from 'bcryptjs';
 import { ObjectId } from 'mongodb'; 
+import fs from 'fs';
 
 import {changeOpenExperimentCount, findResearcherById, changePassword} from '../models/researcher.js';
 import Form, { addForm, findForm, editForm, deleteForm } from '../models/form.js';
 import { deleteParticipants, findParticipantsByExperimentId } from '../models/participant.js';
-import Experiment, {getExperimentById, getExperimentsByResearcherId, updateExperiment, addExperiment, deleteExperiment} from '../models/experiment.js';
+import Experiment, {getExperimentById, getExperimentsByResearcherId, updateExperiment, addExperiment, deleteExperiment, getExperimentsByResearcherIdAndStatus} from '../models/experiment.js';
 import {deleteResults, findResultsByExperimentId} from '../models/result.js';
 
 config();
@@ -15,7 +16,7 @@ const { compare } = pkg;
 
 router.get('/', async (req, res) => {
     try{
-        const experiments = await getExperimentsByResearcherId(req.user._id);
+        const experiments = await getExperimentsByResearcherIdAndStatus(req.user._id, req.query.status);
         res.status(200).json(experiments);
     }catch(err){
         console.log(`Error in finding experiment: ${err}`);
@@ -61,7 +62,8 @@ router.post('/addForm', async (req, res) => {
             });
             const form = await addForm(newForm);
             await updateExperiment(req.body.experimentId, req.user._id, { $set: { formId: form._id } });
-            res.status(201).send({message: 'Form saved', form});
+            console.log(`Form created with id: ${form._id}`);
+            res.status(201).json({message: 'Form saved'});
         }
     } catch(err) {
         console.log(`Error in saving form: ${err}`);
@@ -74,11 +76,12 @@ router.post('/addForm', async (req, res) => {
 
 router.get('/getForm', async (req, res) => {
     try{
-        const form = await findForm(req.body.experimentId, req.user._id);
-        if(!form) {
+        const form = await findForm(req.query.experimentId);
+        if(!form || form.researcherId != req.user._id) {
             return res.status(401).json({message:'Not Allowed'});
         }else{
-            res.status(200).json(form);
+            const questions = form.questions;
+            res.status(200).json({questions});
         }
     }catch(err){
         console.log(`Error in finding form: ${err}`);
@@ -91,11 +94,11 @@ router.get('/getForm', async (req, res) => {
 
 router.patch('/editForm', async (req, res) => {
     try{
-        const form = await editForm(req.body.experimentId, req.user._id, req.body.editedForm);
+        const form = await editForm(req.body.experimentId, req.user._id, {questions: req.body.questions});
         if(!form) {
             return res.status(401).json({message:'Not Allowed'});
         }else{
-            res.status(200).json({message:'Form edited', form: form});
+            res.status(200).json({message:'Form edited'});
         }
     }catch(err){
         console.log(`Error in editing form: ${err}`);
@@ -106,24 +109,59 @@ router.patch('/editForm', async (req, res) => {
     }
 });
 
+router.delete('/deleteForm', async (req, res) => {
+    try{
+        await deleteForm(req.query.experimentId, req.user._id);
+        await updateExperiment(req.query.experimentId, req.user._id, { $set: { formId: null } });
+        res.status(204).json({message:'Form deleted'});
+    }catch(err){
+        console.log(`Error in deleting form: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).json({message:'Invalid request'});
+        }
+        res.status(500).json({message:'Error during deleting form'});
+    }
+});
+
 router.post('/addExperiment', async (req, res) => {
     try{
         const newExperiment = new Experiment({
             researcherId: ObjectId(req.user._id),
             name: req.body.name,
-            type: req.body.type,
+            type: "Two shapes",
             status: "Draft",
             participantNum: 0,
             maxParticipantNum: req.body.maxParticipantNum,
-            controlGroupSize: req.body.controlGroupSize,
-            trajectoryImageNeeded: req.body.trajectoryImageNeeded,
-            positionArrayNeeded: req.body.positionArrayNeeded,
+            controlGroupChance: req.body.controlGroupChance,
+            cursorImageMode: req.body.cursorImageMode,
+            positionTrackingFrequency: req.body.positionTrackingFrequency,
             researcherDescription: req.body.researcherDescription,
-            participantDescription: req.body.participantDescription,
+            participantDescription: " ",
             rounds: []
         });
         const experiment = await addExperiment(newExperiment);
-        res.status(201).json({message: 'Experiment created', experiment});
+        if(req.body.cursorImageMode != null){
+            const folderName = `./images/${experiment._id}`;
+            console.log(folderName)
+            try {
+                if (!fs.existsSync(folderName)) {
+                    fs.mkdirSync(folderName, {recursive: true});
+                }
+            } catch (err) {
+                console.error(err);
+            }
+
+            const tempFolderName = `./tmp/${experiment._id}`;
+            console.log(folderName)
+            try {
+                if (!fs.existsSync(tempFolderName)) {
+                    fs.mkdirSync(tempFolderName, {recursive: true});
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        res.status(201).json(experiment);
     }catch(err){
         console.log(`Error in adding experiment: ${err}`);
         if(err.name === 'ValidationError' || err.name === 'TypeError') {
@@ -160,7 +198,7 @@ router.patch('/editExperiment', async (req, res) => {
         if(!experiment) {
             return res.status(401).json({message:'Not Allowed'});
         }else{
-            res.status(200).json({message: 'Experiment edited', experiment: experiment});
+            res.status(200).json(experiment);
         }
     }catch(err){
         console.log(`Error in updating experiment: ${err}`);
@@ -173,12 +211,12 @@ router.patch('/editExperiment', async (req, res) => {
 
 router.patch('/openExperiment', async (req, res) => {
     try{
-        const experiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Active" } });
+        const experiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Active", openedAt: Date.now } });
         if(!experiment) {
             return res.status(401).json({message:'Not Allowed'});
         }else{
             const researcher = await changeOpenExperimentCount(req.user._id, 1);
-            res.status(200).json({message:'Experiment opened', experiment: experiment, researcher: researcher});
+            res.status(200).json({message:'Experiment opened', experiment, activeExperimentCount: researcher.activeExperimentCount});
         }
     }catch(err){
         console.log(`Error in opening experiment: ${err}`);
@@ -191,7 +229,7 @@ router.patch('/openExperiment', async (req, res) => {
 
 router.patch('/closeExperiment', async (req, res) => {
     try{
-        const experiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Closed" } });
+        const experiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Closed", closedAt: Date.now } });
         if(!experiment) {
             return res.status(401).json({message:'Not Allowed'});
         }else{
@@ -207,10 +245,10 @@ router.patch('/closeExperiment', async (req, res) => {
     }
 });
 
-router.get('/getExperiment', async (req, res) => {
+router.get('/getExperiment/:experimentId', async (req, res) => {
     try{
-        const experiment = await getExperimentById(req.body.experimentId, req.user._id);
-        if(!experiment){
+        const experiment = await getExperimentById(req.params.experimentId);
+        if(!experiment || experiment.researcherId.toString() !== req.user._id.toString()){
             res.status(401).json({message:'Not Allowed'});
         }else{
             res.status(200).json(experiment);

@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import Researcher, {findResearcherByUsername, addResearcher} from '../models/researcher.js';
 import Participant, {addParticipant} from '../models/participant.js';
-import Experiment, {updateExperiment} from '../models/experiment.js';
+import Experiment, {updateExperiment, increaseParticipantNum } from '../models/experiment.js';
 import { ObjectId } from 'mongodb'; 
+import fs from 'fs';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.post('/researcher', async (req, res) => {
         const newResearcher = new Researcher({
             username: req.body.username,
             password: req.body.password,
-            liveExperimentCount: 0
+            activeExperimentCount: 0
         });
         await addResearcher(newResearcher);
         res.status(200).json({message:'Researcher added'});
@@ -29,22 +30,46 @@ router.post('/researcher', async (req, res) => {
     }
 });
 
-router.post('/participant', async (req, res) => {
+router.get('/participant/:experimentId', async (req, res) => {
     try {
-        const experiment = await Experiment.findOne({_id: ObjectId(req.body.experimentId), status: 'Active'});
-        if(!experiment || experiment.participantNum >= experiment.maxParticipantNum) {
+        const experiment = await increaseParticipantNum(req.params.experimentId);
+        if(!experiment) {
             return res.status(400).json({message:'Not Allowed'});
+        }else if(experiment.participantNum == experiment.maxParticipantNum) {
+            const update = { $set: { status: 'Closed' } };
+            await updateExperiment(experiment._id, experiment.researcherId, update);
         }
 
+        const inControlGroup = Math.random() < experiment.controlGroupChance / 100.0;
         const newParticipant = new Participant({
-            experimentId: ObjectId(req.body.experimentId),
-            inControlGroup: req.body.inControlGroup
+            experimentId: ObjectId(req.params.experimentId),
+            inControlGroup: inControlGroup
         });
 
         const participant = await addParticipant(newParticipant);
-        const update = experiment.participantNum + 1 == experiment.maxParticipantNum ? { $inc: { participantNum: 1 }, $set: { status: 'Closed' } } : { $inc: { participantNum: 1 } };
-        await updateExperiment(req.body.experimentId, experiment.researcherId, update); 
-        res.status(201).json({message: 'Successful authorization', participant: participant});
+        console.log(req.params.experimentId)
+
+        const folderName = `./images/${req.params.experimentId}/${participant._id}`;
+
+        try {
+            if (!fs.existsSync(folderName)) {
+                fs.mkdirSync(folderName);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+
+        const tempFolderName = `./tmp/${req.params.experimentId}/${participant._id}`;
+
+        try {
+            if (!fs.existsSync(tempFolderName)) {
+                fs.mkdirSync(tempFolderName);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+
+        res.status(201).json(participant);
     } catch(err) {
         if(err.name === 'ValidationError') {
             return res.status(400).json({message:'Invalid request'});

@@ -11,6 +11,7 @@ import bcryptjs from 'bcryptjs';
 import {findResearcherByUsername} from './models/researcher.js';
 import RefreshToken, {findRefreshToken, addRefreshToken, deleteRefreshToken} from './models/refreshToken.js';
 
+//TODO: merge this with the main server
 config();
 
 set('strictQuery', false);
@@ -94,7 +95,7 @@ app.delete('/logout', async (req, res) => {
         }else{
             await deleteRefreshToken(refreshToken);
             console.log('Refresh token deleted');
-            res.sendStatus(204);
+            res.status(204).json({message:'Logout successful'});
         }
     }catch(err){
         console.log(`Error during logout: ${err}`);

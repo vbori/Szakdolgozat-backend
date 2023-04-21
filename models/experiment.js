@@ -1,6 +1,28 @@
 import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 
+const FlashSchema = new Schema({
+    flashColor: {
+        type: String,
+        required: true
+    },
+    flashFrequency: {
+        type: Number,
+        required: true
+    }
+});
+
+const PointSchema = new Schema({
+    x: {
+        type: Number,
+        required: true
+    },
+    y: {
+        type: Number,
+        required: true
+    }
+});
+
 const ShapeSchema = new Schema({
     shapeType: {
         type: String,
@@ -14,11 +36,8 @@ const ShapeSchema = new Schema({
         type: String,
         required: true
     },
-    flashColor: {
-        type: String
-    },
-    flashFrequency: {
-        type: Number
+    flashing: {
+        type: FlashSchema
     },
     shapeWidth: {
         type: Number,
@@ -28,12 +47,8 @@ const ShapeSchema = new Schema({
         type: Number,
         required: true
     },
-    shapeX: {
-        type: Number,
-        required: true
-    },
-    shapeY: {
-        type: Number,
+    position: {
+        type: PointSchema,
         required: true
     },
     isTarget: {
@@ -42,8 +57,8 @@ const ShapeSchema = new Schema({
     }
 });
 
-const BackGroundDistractionSchema = new Schema({
-    backGroundDistractionColor: {
+const BackgroundDistractionSchema = new Schema({
+    backgroundDistractionColor: {
         type: String,
         required: true
     },
@@ -55,11 +70,8 @@ const BackGroundDistractionSchema = new Schema({
         type: Number,
         required: true
     },
-    flashFrequency: {
-        type: Number
-    },
-    flashColor: {
-        type: String
+    flashing: {
+        type: FlashSchema
     }
 });
 
@@ -95,16 +107,24 @@ const RoundSchema = new Schema({
         type: [ShapeSchema],
         required: true
     },
-    backGroundDistraction: {
-        type: BackGroundDistractionSchema
+    useBackgroundDistraction: {
+        type: Boolean,
+        required: true
+    },
+    useShapeDistractions: {
+        type: Boolean,
+        required: true
+    },
+    backgroundDistraction: {
+        type: BackgroundDistractionSchema
     },
     shapeDistractions: {
         type: [ShapeDistractionSchema]
     }
 });
 
-const BackGroundDistractionConfigSchema = new Schema({
-    backGroundDistractionColor: {
+const BackgroundDistractionConfigSchema = new Schema({
+    backgroundDistractionColor: {
         type: String,
         required: true
     },
@@ -115,6 +135,9 @@ const BackGroundDistractionConfigSchema = new Schema({
     maxDistractionDurationTime: {
         type: Number,
         required: true
+    },
+    flashing: {
+        type: FlashSchema
     }
 });
 
@@ -139,8 +162,8 @@ const DistractingShapeConfigSchema = new Schema({
         type: [String],
         required: true
     },
-    distractingShapeColors: {
-        type: [String],
+    distractingShapeColor: {
+        type: String,
         required: true
     },
     minDistractionDurationTime: {
@@ -150,6 +173,9 @@ const DistractingShapeConfigSchema = new Schema({
     maxDistractionDurationTime: {
         type: Number,
         required: true
+    },
+    flashing: {
+        type: FlashSchema
     }
 });
 
@@ -166,16 +192,20 @@ const ConfigurationSchema = new Schema({
         type: Number,
         required: true
     },
-    restTime: {
+    restTimeSec: {
         type: Number,
         required: true
     },
-    backgroundColors: {
-        type: [String],
+    backgroundColor: {
+        type: String,
         required: true
     },
-    shapeColors: {
-        type: [String],
+    baseShapeColor: {
+        type: String,
+        required: true
+    },
+    targetShapeColor: {
+        type: String,
         required: true
     },
     distractedRoundNum: {
@@ -186,7 +216,19 @@ const ConfigurationSchema = new Schema({
         type: Boolean,
         required: true
     },
-    minDistance: {
+    changeShapeSize: {
+        type: Boolean,
+        required: true
+    },
+    twoDimensional: {
+        type: Boolean,
+        required: true
+    },
+    canvasHeight: {
+        type: Number,
+        required: true
+    },
+    canvasWidth: {
         type: Number,
         required: true
     },
@@ -214,8 +256,8 @@ const ConfigurationSchema = new Schema({
         type: Number,
         required: true
     },
-    backGroundDistractionConfig: {
-        type: BackGroundDistractionConfigSchema
+    backgroundDistractionConfig: {
+        type: BackgroundDistractionConfigSchema
     },
     distractingShapeConfig: {
         type: DistractingShapeConfigSchema
@@ -249,9 +291,6 @@ const ExperimentSchema = new Schema({
     closedAt: {
         type: Date
     },
-    deadline: {
-        type: Date
-    },
     participantNum: {
         type: Number
     },
@@ -259,17 +298,17 @@ const ExperimentSchema = new Schema({
         type: Number,
         required: true
     },
-    controlGroupSize: {
+    controlGroupChance: {
         type: Number,
         required: true
     },
-    trajectoryImageNeeded: {
-        type: Boolean,
-        required: true
+    cursorImageMode: {
+        type: String,
+        required: false
     },
-    positionArrayNeeded: {
-        type: Boolean,
-        required: true
+    positionTrackingFrequency: {
+        type: Number,
+        required: false
     },
     researcherDescription: {
         type: String,
@@ -288,11 +327,14 @@ const ExperimentSchema = new Schema({
     }
 });
 
+//TODO: probably refactor rounds schema according to the new design
+//TODO: refactor all models to MVC
+
 const Experiment = model('Experiment', ExperimentSchema);
 export default Experiment;
 
-export async function getExperimentById (experimentId, researcherId) {
-    const query = { _id: ObjectId(experimentId), researcherId: ObjectId(researcherId) };
+export async function getExperimentById (experimentId) {
+    const query = { _id: ObjectId(experimentId) };
     return Experiment.findOne(query).lean().exec();
 }
 
@@ -303,7 +345,7 @@ export async function getExperimentsByResearcherId (researcherId) {
 
 export async function getExperimentsByResearcherIdAndStatus (researcherId, status) {
     const query = {researcherId: ObjectId(researcherId), status: status};
-    return Experiment.find(query).lean().exec();
+    return Experiment.find(query).lean().exec(); //TODO: project only necessary fields
 }
 
 export async function addExperiment (newExperiment) {
@@ -311,8 +353,13 @@ export async function addExperiment (newExperiment) {
 }
 
 export async function updateExperiment (experimentId, researcherId, updatedExperiment) {
-    const filter = { _id: ObjectId(experimentId), researcherId: ObjectId(researcherId) };
-    return Experiment.findOneAndUpdate(filter, updatedExperiment, { new: true }).lean().exec();
+    const query = { _id: ObjectId(experimentId), researcherId: ObjectId(researcherId) };
+    return Experiment.findOneAndUpdate(query, updatedExperiment, { new: true }).lean().exec();
+}
+
+export async function increaseParticipantNum (experimentId) {
+    const query = { _id: ObjectId(experimentId), status: 'Active', "$expr": { "$lt": [ "$participantNum" , "$maxParticipantNum" ]}};
+    return Experiment.findOneAndUpdate(query, { $inc: { participantNum: 1 } }, { new: true }).lean().exec();
 }
 
 export async function deleteExperiment (experimentId) {

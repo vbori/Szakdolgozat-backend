@@ -12,6 +12,13 @@ const ValidationSchema = new Schema({
     }
 });
 
+const Option = new Schema({
+    optionLabel: {
+        type: String,
+        required: true
+    }
+});
+
 const QuestionSchema = new Schema({
     questionId: {
         type: String,
@@ -25,7 +32,7 @@ const QuestionSchema = new Schema({
         type: String,
         required: true
     },
-    options: [String],
+    options: [Option],
     validation: ValidationSchema,
     required: {
         type: Boolean,
@@ -48,14 +55,14 @@ const FormSchema = new Schema({
 const Form = model('Form', FormSchema);
 export default Form;
 
-export async function findForm(experimentId, researcherId) {
-    const query = {experimentId: ObjectId(experimentId), researcherId: ObjectId(researcherId)};
-    return Form.findOne(query).lean().exec();
+export async function findForm(experimentId) {
+    const filter = {experimentId: ObjectId(experimentId)};
+    return Form.findOne(filter).lean().exec();
 }
 
-export async function deleteForm(experimentId) {
-    const query = {experimentId: ObjectId(experimentId)};
-    return Form.deleteOne(query).exec();
+export async function deleteForm(experimentId, researcherId) {
+    const filter = {experimentId: ObjectId(experimentId), researcherId: ObjectId(researcherId)};
+    return Form.deleteOne(filter).exec();
 }
 
 export async function addForm(newForm) {

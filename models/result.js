@@ -48,7 +48,7 @@ const ResultSchema = new Schema({
         type: Number,
         required: true
     },
-    trajectoryImagePath: {
+    cursorImagePath: {
         type: String
     },
     cursorPositions: {
@@ -62,7 +62,7 @@ const ResultSchema = new Schema({
         type: Number,
         required: true
     },
-    cursorTrajectoryLength: {
+    cursorPathLength: {
         type: Number,
         required: true
     }
