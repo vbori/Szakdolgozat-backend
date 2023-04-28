@@ -10,14 +10,14 @@ const PositionSchema = new Schema({
         type: Number,
         required: true
     }
-});
+}, { versionKey: false, _id : false });
 
 const ClickSchema = new Schema({
     position: {
         type: PositionSchema,
         required: true
     },
-    missed: {
+    misclick: {
         type: Boolean,
         required: true
     },
@@ -29,7 +29,7 @@ const ClickSchema = new Schema({
         type: Boolean,
         required: true
     }
-});
+}, { versionKey: false, _id : false });
 
 const ResultSchema = new Schema({
     experimentId: {
@@ -48,14 +48,15 @@ const ResultSchema = new Schema({
         type: Number,
         required: true
     },
-    cursorImagePath: {
-        type: String
-    },
     cursorPositions: {
         type: [PositionSchema]
     },
     clicks: {
         type: [ClickSchema],
+        required: true
+    },
+    misclickCount: {
+        type: Number,
         required: true
     },
     timeNeeded: {
@@ -64,9 +65,8 @@ const ResultSchema = new Schema({
     },
     cursorPathLength: {
         type: Number,
-        required: true
     }
-});
+}, { versionKey: false });
 
 const Result = model('Result', ResultSchema);
 export default Result;
@@ -76,7 +76,7 @@ export async function addResult(newResult) {
 }
 
 export async function findResultsByExperimentId(experimentId) {
-    return Result.find({experimentId: ObjectId(experimentId)}).sort({roundIdx:1, participantId:1}).exec();
+    return Result.find({experimentId: ObjectId(experimentId)}).sort({roundIdx:1, participantId:1}).lean().exec();
 }
 
 export async function findResultsByParticipantId(participantId) {

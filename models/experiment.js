@@ -2,68 +2,72 @@ import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 
 const FlashSchema = new Schema({
-    flashColor: {
+    color: {
         type: String,
         required: true
     },
-    flashFrequency: {
+    frequency: {
         type: Number,
         required: true
     }
-});
-
-const PointSchema = new Schema({
-    x: {
-        type: Number,
-        required: true
-    },
-    y: {
-        type: Number,
-        required: true
-    }
-});
+}, { versionKey: false, _id : false });
 
 const ShapeSchema = new Schema({
-    shapeType: {
+    type: {
         type: String,
         required: true
     },
-    isFilled: {
+    fill: {
+        type: String,
+        required: true
+    },
+    baseColor: {
+        type: String,
+        required: true
+    },
+    distraction: {
         type: Boolean,
-        required: true
-    },
-    shapeColor: {
-        type: String,
         required: true
     },
     flashing: {
         type: FlashSchema
     },
-    shapeWidth: {
+    width: {
         type: Number,
         required: true
     },
-    shapeHeight: {
+    height: {
         type: Number,
         required: true
     },
-    position: {
-        type: PointSchema,
-        required: true
+    radius: {
+        type: Number
     },
-    isTarget: {
-        type: Boolean,
-        required: true
-    }
-});
-
-const BackgroundDistractionSchema = new Schema({
-    backgroundDistractionColor: {
+    originX: {
         type: String,
         required: true
     },
-    startTime: {
+    originY: {
+        type: String,
+        required: true
+    },
+    left: {
         type: Number,
+        required: true
+    },
+    top: {
+        type: Number,
+        required: true
+    },
+    target: {
+        type: Boolean,
+        required: true
+    }
+}, { versionKey: false, _id : false });
+
+const BackgroundDistractionSchema = new Schema({
+    color: {
+        type: String,
         required: true
     },
     duration: {
@@ -73,7 +77,7 @@ const BackgroundDistractionSchema = new Schema({
     flashing: {
         type: FlashSchema
     }
-});
+}, { versionKey: false, _id : false });
 
 const ShapeDistractionSchema = new Schema({
     distractingShapes: {
@@ -88,7 +92,7 @@ const ShapeDistractionSchema = new Schema({
         type: Number,
         required: true
     }
-});
+}, { versionKey: false, _id : false });
 
 const RoundSchema = new Schema({
     roundIdx: {
@@ -96,32 +100,34 @@ const RoundSchema = new Schema({
         required: true
     },
     isPractice: {
-        type: Boolean,
-        required: true
+        type: Boolean
     },
     restTime: {
+        type: Number
+    },
+    canvasHeight: { 
         type: Number,
         required: true
     },
-    shapes: {
+    canvasWidth: { 
+        type: Number,
+        required: true
+    },
+    background: {
+        type: String,
+        required: true
+    },
+    objects: {
         type: [ShapeSchema],
-        required: true
-    },
-    useBackgroundDistraction: {
-        type: Boolean,
-        required: true
-    },
-    useShapeDistractions: {
-        type: Boolean,
         required: true
     },
     backgroundDistraction: {
         type: BackgroundDistractionSchema
     },
-    shapeDistractions: {
-        type: [ShapeDistractionSchema]
+    shapeDistractionDuration: {
+        type: Number
     }
-});
+}, { versionKey: false, _id : true });
 
 const BackgroundDistractionConfigSchema = new Schema({
     backgroundDistractionColor: {
@@ -139,7 +145,7 @@ const BackgroundDistractionConfigSchema = new Schema({
     flashing: {
         type: FlashSchema
     }
-});
+}, { versionKey: false, _id : false });
 
 const DistractingShapeConfigSchema = new Schema({
     distractingShapeMinWidth: {
@@ -177,7 +183,7 @@ const DistractingShapeConfigSchema = new Schema({
     flashing: {
         type: FlashSchema
     }
-});
+}, { versionKey: false, _id : false });
 
 const ConfigurationSchema = new Schema({
     setNum: {
@@ -185,14 +191,6 @@ const ConfigurationSchema = new Schema({
         required: true
     },
     roundNum: {
-        type: Number,
-        required: true
-    },
-    practiceRoundNum: {
-        type: Number,
-        required: true
-    },
-    restTimeSec: {
         type: Number,
         required: true
     },
@@ -262,7 +260,7 @@ const ConfigurationSchema = new Schema({
     distractingShapeConfig: {
         type: DistractingShapeConfigSchema
     }
-});
+}, { versionKey: false, _id : false });
 
 
 const ExperimentSchema = new Schema({
@@ -274,10 +272,6 @@ const ExperimentSchema = new Schema({
         type: Schema.Types.ObjectId
     },
     name: {
-        type: String,
-        required: true
-    },
-    type: {
         type: String,
         required: true
     },
@@ -325,9 +319,8 @@ const ExperimentSchema = new Schema({
     experimentConfiguration: {
         type: ConfigurationSchema
     }
-});
+}, { versionKey: false });
 
-//TODO: probably refactor rounds schema according to the new design
 //TODO: refactor all models to MVC
 
 const Experiment = model('Experiment', ExperimentSchema);

@@ -10,14 +10,14 @@ const ValidationSchema = new Schema({
         type: Number,
         required: true
     }
-});
+}, { versionKey: false, _id : false });
 
 const Option = new Schema({
     optionLabel: {
         type: String,
         required: true
     }
-});
+}, { versionKey: false, _id : false });
 
 const QuestionSchema = new Schema({
     questionId: {
@@ -38,7 +38,7 @@ const QuestionSchema = new Schema({
         type: Boolean,
         required: true
     }
-});
+}, { versionKey: false, _id : false });
 
 const FormSchema = new Schema({
     researcherId: {
@@ -50,7 +50,7 @@ const FormSchema = new Schema({
         required: true
     },
     questions: [QuestionSchema]
-});
+}, { versionKey: false });
 
 const Form = model('Form', FormSchema);
 export default Form;
@@ -60,8 +60,8 @@ export async function findForm(experimentId) {
     return Form.findOne(filter).lean().exec();
 }
 
-export async function deleteForm(experimentId, researcherId) {
-    const filter = {experimentId: ObjectId(experimentId), researcherId: ObjectId(researcherId)};
+export async function deleteForm(experimentId) {
+    const filter = {experimentId: ObjectId(experimentId)};
     return Form.deleteOne(filter).exec();
 }
 

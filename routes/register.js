@@ -49,26 +49,18 @@ router.get('/participant/:experimentId', async (req, res) => {
         const participant = await addParticipant(newParticipant);
         console.log(req.params.experimentId)
 
-        const folderName = `./images/${req.params.experimentId}/${participant._id}`;
+        if(experiment.cursorImageMode){
+            const folderName = `./images/${req.params.experimentId}/${participant._id}`;
 
-        try {
-            if (!fs.existsSync(folderName)) {
-                fs.mkdirSync(folderName);
+            try {
+                if (!fs.existsSync(folderName)) {
+                    fs.mkdirSync(folderName);
+                }
+            } catch (err) {
+                console.error(err);
             }
-        } catch (err) {
-            console.error(err);
         }
-
-        const tempFolderName = `./tmp/${req.params.experimentId}/${participant._id}`;
-
-        try {
-            if (!fs.existsSync(tempFolderName)) {
-                fs.mkdirSync(tempFolderName);
-            }
-        } catch (err) {
-            console.error(err);
-        }
-
+        
         res.status(201).json(participant);
     } catch(err) {
         if(err.name === 'ValidationError') {

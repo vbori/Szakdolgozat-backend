@@ -15,7 +15,7 @@ const ResearcherSchema = new Schema({
         required: true
     },
     activeExperimentCount: { type: Number }
-});
+}, { versionKey: false });
 
 const Researcher = model('Researcher', ResearcherSchema);
 

@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb';
 const ResponsesSchema = new Schema({
     questionId: { type: String, required: true },
     response: { type: Schema.Types.Mixed, required: true }
-});
+}, { versionKey: false, _id : false });
 
 const ParticipantSchema = new Schema({
     experimentId: { 
@@ -18,7 +18,7 @@ const ParticipantSchema = new Schema({
         type: Boolean ,
         required: true
     }
-});
+}, { versionKey: false });
 
 const Participant = model('Participant', ParticipantSchema);
 
@@ -26,7 +26,7 @@ export default  Participant;
 
 export async function findParticipantsByExperimentId (experimentId) {
     const query = { experimentId: ObjectId(experimentId) };
-    return Participant.find(query).exec();
+    return Participant.find(query).lean().exec();
 }
   
 export async function deleteParticipants (experimentId) {

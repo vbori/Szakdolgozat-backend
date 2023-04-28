@@ -2,7 +2,7 @@ import { Schema, model } from 'mongoose';
 
 const RefreshTokenSchema = new Schema({
   token: { type: String, required: true },
-});
+}, { versionKey: false });
 
 const RefreshToken = model('RefreshToken', RefreshTokenSchema);
 

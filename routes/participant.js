@@ -46,6 +46,7 @@ router.post('/saveImage', (req, res) => {
 
 router.post('/addResult', async (req, res) => {
     try{
+        console.log(req.body.result)
         const participant = await Participant.findOne({_id: ObjectId(req.body.result.participantId), experimentId: ObjectId(req.body.result.experimentId)});
         if(!participant) return res.status(400).json({message:'Cannot find participant'});
         const newResult = new Result(req.body.result);
