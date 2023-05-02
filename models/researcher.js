@@ -1,9 +1,12 @@
 import {config} from 'dotenv';
 import { Schema, model } from 'mongoose';
 import pkg from 'bcryptjs';
+import { ObjectId } from 'mongodb';
 const { genSalt, hash: _hash } = pkg;
 
 config();
+
+const MAX_ACTIVE_EXPERIMENTS = parseInt(process.env.MAX_ACTIVE_EXPERIMENTS);
 
 const ResearcherSchema = new Schema({
     username: { 
@@ -22,8 +25,8 @@ const Researcher = model('Researcher', ResearcherSchema);
 export default Researcher;
 
 export async function findResearcherByUsername(username) {
-    const query = {username: username};
-    return Researcher.findOne(query).exec();
+    const filter = {username: username};
+    return Researcher.findOne(filter).exec();
 }
 
 export async function findResearcherById(id) {
@@ -38,7 +41,16 @@ export async function addResearcher(newResearcher) {
 }
 
 export async function changeOpenExperimentCount(researcherId, change) {
-    return Researcher.findByIdAndUpdate(researcherId, {$inc: {activeExperimentCount: change}}, {new: true}).lean().exec();
+    let filter;
+    if(change == 1){
+        filter=  { _id: ObjectId(researcherId), activeExperimentCount: { $lt: MAX_ACTIVE_EXPERIMENTS } };
+        console.log(MAX_ACTIVE_EXPERIMENTS)
+    }else if(change== -1){
+        filter=  { _id: ObjectId(researcherId), activeExperimentCount: { $gt: 0 } };
+    }else{
+        return null;
+    }
+    return Researcher.findOneAndUpdate(filter, {$inc: {activeExperimentCount: change}}, {new: true}).lean().exec();
 }
 
 export async function changePassword(researcher, newPassword) {

@@ -62,7 +62,10 @@ const ShapeSchema = new Schema({
     target: {
         type: Boolean,
         required: true
-    }
+    },
+    strokeWidth: {
+        type: Number
+    },
 }, { versionKey: false, _id : false });
 
 const BackgroundDistractionSchema = new Schema({
@@ -76,21 +79,6 @@ const BackgroundDistractionSchema = new Schema({
     },
     flashing: {
         type: FlashSchema
-    }
-}, { versionKey: false, _id : false });
-
-const ShapeDistractionSchema = new Schema({
-    distractingShapes: {
-        type: [ShapeSchema],
-        required: true
-    },
-    startTime: {
-        type: Number,
-        required: true
-    },
-    duration: {
-        type: Number,
-        required: true
     }
 }, { versionKey: false, _id : false });
 
@@ -130,15 +118,15 @@ const RoundSchema = new Schema({
 }, { versionKey: false, _id : true });
 
 const BackgroundDistractionConfigSchema = new Schema({
-    backgroundDistractionColor: {
+    color: {
         type: String,
         required: true
     },
-    minDistractionDurationTime: {
+    minDuration: {
         type: Number,
         required: true
     },
-    maxDistractionDurationTime: {
+    maxDuration: {
         type: Number,
         required: true
     },
@@ -148,19 +136,19 @@ const BackgroundDistractionConfigSchema = new Schema({
 }, { versionKey: false, _id : false });
 
 const DistractingShapeConfigSchema = new Schema({
-    distractingShapeMinWidth: {
+    minWidth: {
         type: Number,
         required: true
     },
-    distractingShapeMaxWidth: {
+    maxWidth: {
         type: Number,
         required: true
     },
-    distractingShapeMinHeight: {
+    minHeight: {
         type: Number,
         required: true
     },
-    distractingShapeMaxHeight: {
+    maxHeight: {
         type: Number,
         required: true
     },
@@ -168,15 +156,15 @@ const DistractingShapeConfigSchema = new Schema({
         type: [String],
         required: true
     },
-    distractingShapeColor: {
+    color: {
         type: String,
         required: true
     },
-    minDistractionDurationTime: {
+    minDuration: {
         type: Number,
         required: true
     },
-    maxDistractionDurationTime: {
+    maxDuration: {
         type: Number,
         required: true
     },
@@ -230,11 +218,11 @@ const ConfigurationSchema = new Schema({
         type: Number,
         required: true
     },
-    baseShapeType: {
+    baseShapeTypes: {
         type: [String],
         required: true
     },
-    targetShapeType: {
+    targetShapeTypes: {
         type: [String],
         required: true
     },

@@ -1,63 +1,41 @@
 import {config} from 'dotenv';
-import express from 'express';
-import bodyparser from 'body-parser';
-import cors from 'cors';
-import { set, connect } from 'mongoose';
-import passport from 'passport';
 import jsonwebtoken from 'jsonwebtoken';
-import session from 'express-session';
 import bcryptjs from 'bcryptjs';
 
-import {findResearcherByUsername} from './models/researcher.js';
-import RefreshToken, {findRefreshToken, addRefreshToken, deleteRefreshToken} from './models/refreshToken.js';
+import { Router } from 'express';
 
-//TODO: merge this with the main server
+import {findResearcherByUsername} from '../models/researcher.js';
+import RefreshToken, {findRefreshToken, addRefreshToken, deleteRefreshToken} from '../models/refreshToken.js';
+
 config();
-
-set('strictQuery', false);
-connect(process.env.DATABASE, (err) => {
-    if (!err)
-        console.log('MongoDB connection succeeded.');
-    else
-        console.log(`Error in DB connection : ${err}`);
-});
-
+const router = Router();
 const { verify, sign } = jsonwebtoken;
 const { compare } = bcryptjs;
-const app = express();
 
-app.use(bodyparser.json());
-app.use(cors({ origin: process.env.CORS_ORIGIN }));
-app.use(session({ 
-    secret: process.env.AUTH_SESSION_SECRET,
-    resave: true, 
-    saveUninitialized: true
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-app.listen(process.env.AUTH_PORT, () => console.log('Server started at port : ' + process.env.AUTH_PORT));
-
-app.post('/token', async (req, res) => {
+router.post('/token', async (req, res) => {
     try{
-        if (req.body.token == null) return res.sendStatus(401);
-        const refreshToken = await findRefreshToken(req.body.token);
+        if (req.cookies.refreshToken == null) return res.sendStatus(401);
+        const refreshToken = await findRefreshToken(req.cookies.refreshToken);
         if (!refreshToken){
+            console.log("Refresh token not found")
             return res.status(403).json({ message: 'Refresh token not found' });
         }else{
-            const decoded = verify(req.body.token, process.env.REFRESH_TOKEN_SECRET);
+            const decoded = verify(req.cookies.refreshToken, process.env.REFRESH_TOKEN_SECRET);
             const accessToken = generateAccessToken({ _id: decoded._id });
-            res.status(201).send(accessToken);
+            res.status(201).json({accessToken});
         }
     }catch(err){
         console.log(`Error in finding refresh token: ${err}`);
         if(err.name === 'ValidationError' || err.name === 'TypeError') {
             return res.status(400).json({message:'Invalid request'});
+        }else if(err.name === 'TokenExpiredError'){
+            return res.status(403).json({message:'Refresh token expired'});
         }
         res.status(500).json({message:'Error in finding refresh token'});
     }
 });
 
-app.post('/login', async (req, res) => {
+router.post('/login', async (req, res) => {
     try {
         const researcher = await findResearcherByUsername(req.body.username);
 
@@ -73,7 +51,10 @@ app.post('/login', async (req, res) => {
 
             await addRefreshToken(newRefreshToken);
             console.log('Refresh token saved');
-            res.status(201).json({ accessToken: accessToken, refreshToken: refreshToken }); 
+            res.cookie('refreshToken', refreshToken, { 
+                httpOnly: true, 
+                maxAge: 24 * 60 * 60 * 1000 });
+            return res.status(201).json({ accessToken: accessToken}); 
         } else {
             res.status(401).json({message:'Authentication failed'});
         }
@@ -86,16 +67,16 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.delete('/logout', async (req, res) => {
+router.delete('/logout', async (req, res) => {
     try{
-        if (req.query.token == null) return res.sendStatus(401);
-        const refreshToken = await findRefreshToken(req.query.token);
+        if (req.cookies.refreshToken == null) return res.sendStatus(401);
+        const refreshToken = await findRefreshToken(req.cookies.refreshToken);
         if (!refreshToken){
             return res.status(403).json({ message: 'Refresh token not found' });
         }else{
             await deleteRefreshToken(refreshToken);
-            console.log('Refresh token deleted');
-            res.status(204).json({message:'Logout successful'});
+            console.log('Refresh token deleted', refreshToken);
+            return res.clearCookie('refreshToken', { httpOnly: true }).status(204).json({ message: 'Logout successful' });
         }
     }catch(err){
         console.log(`Error during logout: ${err}`);
@@ -109,3 +90,5 @@ app.delete('/logout', async (req, res) => {
 function generateAccessToken(user) {
     return sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_TIME });
 }
+
+export default router;

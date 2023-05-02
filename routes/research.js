@@ -10,7 +10,7 @@ import { stringify } from 'csv-stringify';
 import {changeOpenExperimentCount, findResearcherById, changePassword} from '../models/researcher.js';
 import Form, { addForm, findForm, editForm, deleteForm } from '../models/form.js';
 import { deleteParticipants, findParticipantsByExperimentId } from '../models/participant.js';
-import Experiment, {getExperimentById, getExperimentsByResearcherId, updateExperiment, addExperiment, deleteExperiment, getExperimentsByResearcherIdAndStatus} from '../models/experiment.js';
+import Experiment, {getExperimentById, updateExperiment, addExperiment, deleteExperiment, getExperimentsByResearcherIdAndStatus} from '../models/experiment.js';
 import {deleteResults, findResultsByExperimentId} from '../models/result.js';
 
 config();
@@ -202,12 +202,21 @@ router.patch('/editExperiment', async (req, res) => {
 
 router.patch('/openExperiment', async (req, res) => {
   try{
-    const experiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Active", openedAt: Date.now() } });
-    if(!experiment) {
+    const experiment = await getExperimentById(req.body.experimentId);
+    if(!experiment || experiment.researcherId != req.user._id) {
       return res.status(401).json({message:'Not Allowed'});
     }else{
       const researcher = await changeOpenExperimentCount(req.user._id, 1);
-      res.status(200).json({message:'Experiment opened', experiment, activeExperimentCount: researcher.activeExperimentCount});
+      if(!researcher) {
+        return res.status(401).json({message:'You have reached the maximum number of open experiments'});
+      }else{
+        const updatedExperiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Active", openedAt: Date.now() } });
+        if(!updatedExperiment) {
+          return res.status(401).json({message:'Not Allowed'});
+        }else{
+          res.status(200).json({message:'Experiment opened', experiment: updatedExperiment, activeExperimentCount: researcher.activeExperimentCount});
+        }
+      }
     }
   }catch(err){
     console.log(`Error in opening experiment: ${err}`);

@@ -5,10 +5,12 @@ import cors from 'cors';
 import { set, connect } from 'mongoose';
 import passport from 'passport';
 import session from 'express-session';
+import cookieParser from 'cookie-parser';
 
 import researchController from './routes/research.js';
 import registerController from './routes/register.js';
 import participantController from './routes/participant.js';
+import authController from './routes/auth.js';
 import verifyJWT from './middleware/verifyJWT.js';
 
 config();
@@ -23,8 +25,9 @@ connect(process.env.DATABASE, (err) => {
 
 const app = express();
 
+app.use(cookieParser());
 app.use(bodyparser.json());
-app.use(cors({ origin: process.env.CORS_ORIGIN }));
+app.use(cors({ origin: process.env.CORS_ORIGIN , credentials: true}));
 app.use(session({ 
     secret: process.env.SESSION_SECRET,
     resave: true, 
@@ -35,6 +38,7 @@ app.use(passport.session());
 app.listen(process.env.SERVER_PORT, () => console.log('Server started at port : ' + process.env.SERVER_PORT));
 
 app.use('/register', registerController);
+app.use('/auth', authController);
 app.use('/participant', participantController);
 
 app.use(verifyJWT);
