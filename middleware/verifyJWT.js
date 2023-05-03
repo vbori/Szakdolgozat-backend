@@ -8,7 +8,11 @@ const verifyJWT = (req, res, next) => {
     if (token == null) return res.sendStatus(401);
 
     verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-        if(err) return res.status(403).json({ message: 'Access token verification failed' });
+        if(err){
+            console.log("Access token verification failed");
+            return res.status(403).send('Session expired, please login again');
+        } 
+
         req.user = user;
         next();
     });

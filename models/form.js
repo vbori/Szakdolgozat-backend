@@ -54,22 +54,3 @@ const FormSchema = new Schema({
 
 const Form = model('Form', FormSchema);
 export default Form;
-
-export async function findForm(experimentId) {
-    const filter = {experimentId: ObjectId(experimentId)};
-    return Form.findOne(filter).lean().exec();
-}
-
-export async function deleteForm(experimentId) {
-    const filter = {experimentId: ObjectId(experimentId)};
-    return Form.deleteOne(filter).exec();
-}
-
-export async function addForm(newForm) {
-    return newForm.save();
-}
-
-export async function editForm(experimentId, researcherId, editedForm) {
-    const filter = { experimentId: ObjectId(experimentId), researcherId: ObjectId(researcherId) };
-    return Form.findOneAndUpdate(filter, editedForm, { new: true }).lean().exec();
-}
