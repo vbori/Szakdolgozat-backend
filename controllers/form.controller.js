@@ -12,7 +12,7 @@ export const createForm = async (req, res) => {
         const newForm = new Form({
           researcherId: ObjectId(req.user._id),
           experimentId: ObjectId(req.body.experimentId),
-          questions: req.body.questions
+          questions: req.body.questions ?? []
         });
         const form = await addForm(newForm);
         await updateExperiment(req.body.experimentId, req.user._id, { $set: { formId: form._id } });
@@ -24,7 +24,7 @@ export const createForm = async (req, res) => {
       if(err.name === 'ValidationError' || err.name === 'TypeError') {
         return res.status(400).send('Invalid request');
       }
-      res.status(500).send('Error in saving form');
+      res.status(500).send('Error during saving form');
     }
 }
 
@@ -68,7 +68,7 @@ export const editForm = async (req, res) => {
     try{
       const form = await updateForm(req.body.experimentId, req.user._id, {questions: req.body.questions});
       if(!form) {
-        return res.status(401).send('Not Allowed');
+        return res.status(401).send('Not allowed');
       }else{
         res.status(200).json({message:'Form edited'});
       }
@@ -108,6 +108,6 @@ export const hasForm = async (req, res) => {
         if(err.name === 'ValidationError' || err.name === 'TypeError') {
             return res.status(400).send('Invalid request');
         }
-        res.status(500).send('Error during searching form');
+        res.status(500).send('Error during looking for form');
     }
 }

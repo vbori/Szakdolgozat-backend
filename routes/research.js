@@ -4,8 +4,7 @@ import { Router } from 'express';
 import { changePassword } from '../controllers/researcher.controller.js';
 import { createForm, getForm, editForm, removeForm } from '../controllers/form.controller.js';
 import { listExperiments, createExperiment, deleteExperimentData,editExperiment, openExperiment, closeExperiment, getExperiment } from '../controllers/experiment.controller.js';
-import { getParticipants } from '../controllers/participant.controller.js';
-import { getExperimentResults, downloadResults } from '../controllers/result.controller.js';
+import { downloadResults } from '../controllers/result.controller.js';
 
 config();
 const router = Router(); 
@@ -25,9 +24,6 @@ router.patch('/openExperiment', openExperiment);
 router.patch('/closeExperiment', closeExperiment);
 router.get('/getExperiment/:experimentId', getExperiment);
 
-router.get('/getParticipants', getParticipants);
-
-router.get('/getResults', getExperimentResults);
 router.get('/downloadResults/:experimentId/:format', downloadResults);
 
 export default router;

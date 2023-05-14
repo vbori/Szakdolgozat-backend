@@ -15,7 +15,7 @@ router.patch('/addResponses', addResponseToParticipant);
 router.post('/saveImage', saveImage);
 router.post('/addResult', saveResult);
 
-router.get('/getDescription/:experimentId/:demoMode', getDescription);
+router.get('/getDescription/:experimentId', getDescription);
 router.get('/getRoundsAndTrackingInfo/:experimentId', getExperimentData);
 
 router.get('/getForm/:experimentId', getFormForParticipant);

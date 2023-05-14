@@ -3,7 +3,6 @@ import express from 'express';
 import bodyparser from 'body-parser';
 import cors from 'cors';
 import { set, connect } from 'mongoose';
-import passport from 'passport';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 
@@ -26,15 +25,15 @@ connect(process.env.DATABASE, (err) => {
 const app = express();
 
 app.use(cookieParser());
-app.use(bodyparser.json());
+app.use(bodyparser.json({limit: '50mb'}));
+app.use(bodyparser.urlencoded({limit: '50mb', extended: true}));
 app.use(cors({ origin: process.env.CORS_ORIGIN , credentials: true}));
 app.use(session({ 
     secret: process.env.SESSION_SECRET,
     resave: true, 
     saveUninitialized: true
 }));
-app.use(passport.initialize());
-app.use(passport.session());
+
 app.listen(process.env.SERVER_PORT, () => console.log('Server started at port : ' + process.env.SERVER_PORT));
 
 app.use('/register', registerController);
@@ -43,3 +42,5 @@ app.use('/participant', participantController);
 
 app.use(verifyJWT);
 app.use('/research', researchController);
+
+export default app;

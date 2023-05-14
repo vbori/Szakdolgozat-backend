@@ -37,17 +37,7 @@ export const createExperiment = async (req, res) => {
             rounds: []
         });
         const experiment = await addExperiment(newExperiment);
-        if(req.body.cursorImageMode != null){
-            const folderName = `./images/${experiment._id}`;
-            console.log(folderName)
-            try {
-                if (!fs.existsSync(folderName)) {
-                    fs.mkdirSync(folderName, {recursive: true});
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
+        
         res.status(201).json(experiment);
     }catch(err){
         console.log(`Error in adding experiment: ${err}`);
@@ -58,11 +48,84 @@ export const createExperiment = async (req, res) => {
     }
 }
 
+export const editExperiment = async (req, res) => {
+    try{
+        const experiment = await updateExperiment(req.body.experimentId, req.user._id, req.body.updatedExperiment);
+        if(!experiment) {
+            return res.status(401).send('Not allowed');
+        }else{
+            res.status(200).json(experiment);
+        }
+    }catch(err){
+        console.log(`Error in updating experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).send('Invalid request');
+        }
+        res.status(500).send('Error during editing experiment');
+    }
+}
+
+export const openExperiment = async (req, res) => {
+    try{
+        const experiment = await getExperimentById(req.body.experimentId);
+        if(!experiment || experiment.researcherId != req.user._id) {
+            return res.status(401).send('Not allowed');
+        }else{
+            const researcher = await changeOpenExperimentCount(req.user._id, 1);
+            if(!researcher) {
+                return res.status(401).send('You have reached the maximum number of active experiments');
+            }else{
+                if(experiment.cursorImageMode != null){
+                    const folderName = `./images/${experiment._id}`;
+                    console.log(folderName)
+                    try {
+                        if (!fs.existsSync(folderName)) {
+                            fs.mkdirSync(folderName, {recursive: true});
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+                const updatedExperiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Active", openedAt: Date.now() } });
+                if(!updatedExperiment) {
+                    return res.status(401).send('Not allowed');
+                }else{
+                    res.status(200).json({message:'Experiment opened', experiment: updatedExperiment, activeExperimentCount: researcher.activeExperimentCount});
+                }
+            }
+        }
+    }catch(err){
+        console.log(`Error in opening experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).send('Invalid request');
+        }
+        res.status(500).send('Experiment not opened');
+    }
+}
+
+export const closeExperiment = async (req, res) => {
+    try{
+        const experiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Closed", closedAt: Date.now() } });
+        if(!experiment) {
+            return res.status(401).send('Not allowed');
+        }else{
+            const researcher = await changeOpenExperimentCount(req.user._id, -1);
+            res.status(200).json({message:'Experiment closed', experiment: experiment, researcher: researcher});
+        }
+    }catch(err){
+        console.log(`Error in closing experiment: ${err}`);
+        if(err.name === 'ValidationError' || err.name === 'TypeError') {
+            return res.status(400).send('Invalid request');
+        }
+        res.status(500).send('Experiment not closed');
+    }
+}
+
 export const deleteExperimentData = async (req, res) => {
     try{
         const experiment = await getExperimentByIdAndResearcherId(req.params.experimentId, req.user._id);
         if(!experiment) {
-            return res.status(401).send('Not Allowed');
+            return res.status(401).send('Not allowed');
         }else{
             await deleteParticipants(req.params.experimentId);
             await deleteForm(req.params.experimentId);
@@ -86,73 +149,11 @@ export const deleteExperimentData = async (req, res) => {
     }
 }
 
-export const editExperiment = async (req, res) => {
-    try{
-        const experiment = await updateExperiment(req.body.experimentId, req.user._id, req.body.updatedExperiment);
-        if(!experiment) {
-            return res.status(401).send('Not Allowed');
-        }else{
-            res.status(200).json(experiment);
-        }
-    }catch(err){
-        console.log(`Error in updating experiment: ${err}`);
-        if(err.name === 'ValidationError' || err.name === 'TypeError') {
-            return res.status(400).send('Invalid request');
-        }
-        res.status(500).send('Error during editing experiment');
-    }
-}
-
-export const openExperiment = async (req, res) => {
-    try{
-        const experiment = await getExperimentById(req.body.experimentId);
-        if(!experiment || experiment.researcherId != req.user._id) {
-            return res.status(401).send('Not Allowed');
-        }else{
-            const researcher = await changeOpenExperimentCount(req.user._id, 1);
-            if(!researcher) {
-                return res.status(401).send('You have reached the maximum number of open experiments');
-            }else{
-                const updatedExperiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Active", openedAt: Date.now() } });
-                if(!updatedExperiment) {
-                    return res.status(401).send('Not Allowed');
-                }else{
-                    res.status(200).json({message:'Experiment opened', experiment: updatedExperiment, activeExperimentCount: researcher.activeExperimentCount});
-                }
-            }
-        }
-    }catch(err){
-        console.log(`Error in opening experiment: ${err}`);
-        if(err.name === 'ValidationError' || err.name === 'TypeError') {
-            return res.status(400).send('Invalid request');
-        }
-        res.status(500).send('Error - Experiment not opened');
-    }
-}
-
-export const closeExperiment = async (req, res) => {
-    try{
-        const experiment = await updateExperiment(req.body.experimentId, req.user._id, { $set: { status: "Closed", closedAt: Date.now() } });
-        if(!experiment) {
-            return res.status(401).send('Not Allowed');
-        }else{
-            const researcher = await changeOpenExperimentCount(req.user._id, -1);
-            res.status(200).json({message:'Experiment closed', experiment: experiment, researcher: researcher});
-        }
-    }catch(err){
-        console.log(`Error in closing experiment: ${err}`);
-        if(err.name === 'ValidationError' || err.name === 'TypeError') {
-            return res.status(400).send('Invalid request');
-        }
-        res.status(500).send('Error - Experiment not closed');
-    }
-}
-
 export const getExperiment =  async (req, res) => {
     try{
         const experiment = await getExperimentById(req.params.experimentId);
         if(!experiment || experiment.researcherId.toString() !== req.user._id.toString()){
-            res.status(401).send('Not Allowed');
+            res.status(401).send('Not allowed');
         }else{
             res.status(200).json(experiment);
         }
@@ -161,7 +162,7 @@ export const getExperiment =  async (req, res) => {
         if(err.name === 'ValidationError' || err.name === 'TypeError') {
             return res.status(400).send('Invalid request');
         }
-        res.status(500).send('Experiment not found');
+        res.status(500).send('Error during looking for experiment');
     }
 }
 

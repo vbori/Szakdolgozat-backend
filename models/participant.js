@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
 
-const ResponsesSchema = new Schema({
+const ResponseSchema = new Schema({
     questionId: { type: String, required: true },
     response: { type: Schema.Types.Mixed, required: true }
 }, { versionKey: false, _id : false });
@@ -12,7 +12,7 @@ const ParticipantSchema = new Schema({
         required: true
     },
 
-    responses: [ResponsesSchema],
+    responses: [ResponseSchema],
 
     inControlGroup: { 
         type: Boolean ,

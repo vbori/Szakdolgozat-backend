@@ -22,8 +22,7 @@ const ShapeSchema = new Schema({
         required: true
     },
     baseColor: {
-        type: String,
-        required: true
+        type: String
     },
     distraction: {
         type: Boolean,
@@ -86,12 +85,6 @@ const RoundSchema = new Schema({
     roundIdx: {
         type: Number,
         required: true
-    },
-    isPractice: {
-        type: Boolean
-    },
-    restTime: {
-        type: Number
     },
     canvasHeight: { 
         type: Number,
@@ -206,7 +199,7 @@ const ConfigurationSchema = new Schema({
         type: Boolean,
         required: true
     },
-    twoDimensional: {
+    oneDimensional: {
         type: Boolean,
         required: true
     },
@@ -274,7 +267,8 @@ const ExperimentSchema = new Schema({
         type: Date
     },
     participantNum: {
-        type: Number
+        type: Number,
+        required: true
     },
     maxParticipantNum: {
         type: Number,
@@ -285,12 +279,10 @@ const ExperimentSchema = new Schema({
         required: true
     },
     cursorImageMode: {
-        type: String,
-        required: false
+        type: String
     },
     positionTrackingFrequency: {
-        type: Number,
-        required: false
+        type: Number
     },
     researcherDescription: {
         type: String,
@@ -308,8 +300,6 @@ const ExperimentSchema = new Schema({
         type: ConfigurationSchema
     }
 }, { versionKey: false });
-
-//TODO: refactor all models to MVC
 
 const Experiment = model('Experiment', ExperimentSchema);
 export default Experiment;

@@ -17,7 +17,8 @@ export async function getExperimentByIdAndResearcherId (experimentId, researcher
 
 export async function getExperimentsByResearcherIdAndStatus (researcherId, status) {
     const query = {researcherId: ObjectId(researcherId), status: status};
-    return Experiment.find(query).lean().exec(); //TODO: project only necessary fields
+    const projection = { _id: 1, name: 1, researcherDescription: 1, status: 1, participantNum: 1 };
+    return Experiment.find(query, projection).lean().exec();
 }
 
 export async function addExperiment (newExperiment) {

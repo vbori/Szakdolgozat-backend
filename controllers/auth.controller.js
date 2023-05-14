@@ -18,7 +18,7 @@ export const refreshToken = async (req, res) => {
         }else{
             const decoded = verify(req.cookies.refreshToken, process.env.REFRESH_TOKEN_SECRET);
             const accessToken = generateAccessToken({ _id: decoded._id });
-            res.status(201).json({accessToken});
+            res.status(201).json(accessToken);
         }
     }catch(err){
         console.log(`Error in finding refresh token: ${err}`);
@@ -50,7 +50,7 @@ export const login = async (req, res) => {
             res.cookie('refreshToken', refreshToken, { 
                 httpOnly: true, 
                 maxAge: 24 * 60 * 60 * 1000 });
-            return res.status(201).json({ accessToken: accessToken}); 
+            return res.status(201).json(accessToken); 
         } else {
             res.status(401).send('Authentication failed');
         }
@@ -68,7 +68,7 @@ export const logout = async (req, res) => {
         if (req.cookies.refreshToken == null) return res.sendStatus(401);
         const refreshToken = await findToken(req.cookies.refreshToken);
         if (!refreshToken){
-            return res.status(403).send('Refresh token not found');
+            return res.clearCookie('refreshToken', { httpOnly: true }).status(403).send('Refresh token not found');
         }else{
             await deleteToken(refreshToken);
             console.log('Refresh token deleted', refreshToken);

@@ -49,7 +49,10 @@ const FormSchema = new Schema({
         type: String,
         required: true
     },
-    questions: [QuestionSchema]
+    questions: {
+        type: [QuestionSchema],
+        required: true
+    }
 }, { versionKey: false });
 
 const Form = model('Form', FormSchema);

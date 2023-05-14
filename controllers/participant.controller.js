@@ -1,6 +1,6 @@
 import Participant from '../models/Participant.js';
-import { addParticipant, findParticipantsByExperimentId, addResponses } from '../services/participant.service.js';
-import {updateExperiment, increaseParticipantNum, getExperimentByIdAndResearcherId } from '../services/experiment.service.js';
+import { addParticipant,  addResponses } from '../services/participant.service.js';
+import {updateExperiment, increaseParticipantNum } from '../services/experiment.service.js';
 import { changeOpenExperimentCount } from '../services/researcher.service.js';
 
 import { ObjectId } from 'mongodb'; 
@@ -11,7 +11,7 @@ export const registerParticipant = async (req, res) => {
         const experiment = await increaseParticipantNum(req.params.experimentId);
         if(!experiment) {
             console.log('Experiment not found in registerParticipant')
-            return res.status(400).send('Not Allowed');
+            return res.status(400).send('Not allowed');
         }else if(experiment.participantNum == experiment.maxParticipantNum) {
             const update = { $set: { status: 'Closed' } };
             await updateExperiment(experiment._id, experiment.researcherId, update);
@@ -45,25 +45,7 @@ export const registerParticipant = async (req, res) => {
             return res.status(400).send('Invalid request');
         }
         console.log(`Error in participant registration: ${err}`);
-        res.status(500).send('Error during registration');
-    }
-}
-
-export const getParticipants = async (req, res) => {
-    try{
-      const experiment = await getExperimentByIdAndResearcherId(req.body.experimentId, req.user._id);
-      if(!experiment) {
-        return res.status(401).send('Not Allowed');
-      }else{
-        const participants = await findParticipantsByExperimentId(req.body.experimentId);
-        res.status(200).send(participants);
-      }
-    }catch(err){
-      console.log(`Error in finding participants: ${err}`);
-      if(err.name === 'ValidationError' || err.name === 'TypeError') {
-        return res.status(400).send('Invalid request');
-      }
-      res.status(500).send('Participants not found');
+        res.status(500).send('Internal server error');
     }
 }
 

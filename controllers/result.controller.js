@@ -1,4 +1,4 @@
-import { getExperimentByIdAndResearcherId, getExperimentById } from "../services/experiment.service.js";
+import { getExperimentById } from "../services/experiment.service.js";
 import { findResultsByExperimentId, addResult } from '../services/result.service.js';
 import { findParticipantsByExperimentId, findParticipantByIdAndExperimentId } from '../services/participant.service.js';
 import { findForm } from '../services/form.service.js';
@@ -9,23 +9,6 @@ import archiver from 'archiver';
 import path from 'path';
 import { stringify } from 'csv-stringify';
 
-export const getExperimentResults = async (req, res) => {
-    try{
-      const experiment = await getExperimentByIdAndResearcherId(req.body.experimentId, req.user._id);
-      if(!experiment) {
-        return res.status(401).send('Not Allowed');
-      }else{
-        const results = await findResultsByExperimentId(req.body.experimentId);
-        res.status(200).send(results);
-      }
-    }catch(err){
-      console.log(`Error in finding results: ${err}`);
-      if(err.name === 'ValidationError' || err.name === 'TypeError') {
-        return res.status(400).send('Invalid request');
-      }
-      res.status(500).send('Results not found');
-    }
-}
 
 export const downloadResults = async (req, res) => {
     try {
@@ -108,14 +91,13 @@ export const saveImage = async (req, res) => {
         res.status(500).send('Failed to save image on server');
       } else {
         console.log('Image saved on server:', filePath);
-        res.json({ message: 'Image saved on server', filePath });
+        res.json({ message: 'Image saved on server'});
       }
     });
 }
 
 export const saveResult = async (req, res) => {
     try{
-        console.log(req.body.result)
         const participant = await findParticipantByIdAndExperimentId(req.body.result.participantId, req.body.result.experimentId);
         if(!participant) return res.status(400).send('Cannot find participant');
         const newResult = new Result(req.body.result);
