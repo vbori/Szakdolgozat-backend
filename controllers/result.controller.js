@@ -13,12 +13,16 @@ import { stringify } from 'csv-stringify';
 export const downloadResults = async (req, res) => {
     try {
       const { experimentId, format } = req.params;
-      const experiment = await getExperimentById(experimentId);
+      let experiment = await getExperimentById(experimentId);
   
       if (!experiment) {
         return res.status(404).send('Experiment not found');
       }
-  
+
+      //parse experiment openedAt and closedAt to readable format
+      experiment.openedAt = experiment.openedAt.toLocaleString();
+      experiment.closedAt = experiment.closedAt.toLocaleString();
+
       const participants = await findParticipantsByExperimentId(experimentId);
       const results = await findResultsByExperimentId(experimentId);
       const form = await findForm(experiment._id);
