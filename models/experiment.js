@@ -107,6 +107,9 @@ const RoundSchema = new Schema({
     },
     shapeDistractionDuration: {
         type: Number
+    },
+    breakTime: {
+        type: Number
     }
 }, { versionKey: false, _id : true });
 
@@ -174,6 +177,9 @@ const ConfigurationSchema = new Schema({
     roundNum: {
         type: Number,
         required: true
+    },
+    breakTime: {
+        type: Number
     },
     backgroundColor: {
         type: String,
