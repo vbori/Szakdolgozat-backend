@@ -11,7 +11,10 @@ const ParticipantSchema = new Schema({
         type: ObjectId,
         required: true
     },
-
+    globalId: { 
+        type: String,
+        required: true
+    },
     responses: [ResponseSchema],
 
     inControlGroup: { 
